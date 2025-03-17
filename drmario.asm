@@ -2,7 +2,7 @@
 # This file contains our implementation of Dr Mario.
 #
 # Student 1: Thanush Lingeswaran, 1010292586
-# Student 2: Name, Student Number (if applicable)
+# Student 2: Jackie Liang, 1010279119
 #
 # We assert that the code submitted here is entirely our own 
 # creation, and will indicate otherwise when it is not.
