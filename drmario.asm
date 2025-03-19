@@ -15,7 +15,7 @@
 # - Base Address for Display:   0x10008000 ($gp)
 ##############################################################################
 
-   .data
+    .data
 ##############################################################################
 # Immutable Data
 ##############################################################################
@@ -25,6 +25,15 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
+
+# Define 3 colors for the capsule halves
+COLOR_RED:    .word 0xff0000  # Red
+COLOR_GREEN:  .word 0x00ff00  # Green
+COLOR_BLUE:   .word 0x0000ff  # Blue
+
+# Capsule position (middle of the gap)
+CAPSULE_ROW:  .word 7         # Row for the capsule (middle of the gap)
+CAPSULE_COL:  .word 15        # Column for the capsule (middle of the gap)
 
 ##############################################################################
 # Mutable Data
@@ -47,7 +56,7 @@ main:
 
     # Draw the left vertical line
     li $a0, 10                # Start at row 10
-    li $a1, 8                 # Start at column 8
+    li $a1, 7                 # Start at column 8
     li $a2, 16                # Height of the vertical line (16 pixels)
     jal draw_vertical_line
 
@@ -59,14 +68,14 @@ main:
 
     # Draw the bottom horizontal line
     li $a0, 26                # Start at row 26
-    li $a1, 9                 # Start at column 9
+    li $a1, 8                 # Start at column 9
     li $a2, 22                # End at column 22
     jal draw_horizontal_line
 
     # Draw the top horizontal line with a 4-pixel gap in the middle
     li $a0, 9                 # Start at row 9
-    li $a1, 9                 # Start at column 9
-    li $a2, 12                # End column for the left part (12)
+    li $a1, 8                 # Start at column 9
+    li $a2, 11                # End column for the left part (12)
     jal draw_horizontal_line
 
     # Draw the right part of the top horizontal line
@@ -77,7 +86,7 @@ main:
 
     # Draw the 2 vertical lines that are protruding out of the gap
     li $a0, 7                 # Start at row 7
-    li $a1, 13                # Start at column 13
+    li $a1, 12                # Start at column 13
     li $a2, 2                 # Height of the vertical line (2 pixels)
     jal draw_vertical_line
 
@@ -88,7 +97,7 @@ main:
 
     # Draw additional vertical lines for the design
     li $a0, 5                 # Start at row 5
-    li $a1, 12                # Start at column 12
+    li $a1, 11                # Start at column 12
     li $a2, 2                 # Height of the vertical line (2 pixels)
     jal draw_vertical_line
 
@@ -96,6 +105,9 @@ main:
     li $a1, 19                # Start at column 19
     li $a2, 2                 # Height of the vertical line (2 pixels)
     jal draw_vertical_line
+
+    # Draw the initial capsule in the middle of the gap
+    jal draw_initial_capsule
 
     # Start the main game loop
 game_loop:
@@ -141,3 +153,74 @@ draw_horizontal_loop:
     addi $a1, $a1, 1          # Increment column count
     ble $a1, $a2, draw_horizontal_loop # Continue drawing until the end column
     jr $ra                    # Return to caller
+
+# Function to draw the initial capsule
+draw_initial_capsule:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Generate random colors for the capsule halves
+    jal get_random_color       # Get random color for the first half
+    move $s0, $v0             # Save first color in $s0
+    jal get_random_color       # Get random color for the second half
+    move $s1, $v0             # Save second color in $s1
+
+    # Draw the first half of the capsule
+    lw $a0, CAPSULE_ROW       # Row for the capsule
+    lw $a1, CAPSULE_COL       # Column for the capsule
+    move $a2, $s0             # Color for the first half
+    jal draw_pixel             # Draw the first half
+
+    # Draw the second half of the capsule (below the first half)
+    addi $a0, $a0, 1          # Move to the next row
+    move $a2, $s1             # Color for the second half
+    jal draw_pixel             # Draw the second half
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+# Function to get a random color
+get_random_color:
+    # Load the address of the colors
+    la $t0, COLOR_RED         # Load address of COLOR_RED
+    la $t1, COLOR_GREEN       # Load address of COLOR_GREEN
+    la $t2, COLOR_BLUE        # Load address of COLOR_BLUE
+
+    # Generate a random number between 0 and 2
+    li $v0, 42                # Syscall for random number
+    li $a0, 0                 # Random number generator ID
+    li $a1, 3                 # Upper bound (exclusive)
+    syscall
+
+    # Use the random number to select a color
+    beq $a0, 0, select_red    # If 0, select red
+    beq $a0, 1, select_green  # If 1, select green
+    beq $a0, 2, select_blue   # If 2, select blue
+
+select_red:
+    lw $v0, 0($t0)            # Load red color
+    jr $ra
+
+select_green:
+    lw $v0, 0($t1)            # Load green color
+    jr $ra
+
+select_blue:
+    lw $v0, 0($t2)            # Load blue color
+    jr $ra
+
+# Function to draw a pixel
+# Arguments: $a0 = row, $a1 = column, $a2 = color
+draw_pixel:
+    lw $t0, ADDR_DSPL         # Load base address of display
+    li $t1, 128               # Row offset (128 bytes per row)
+    mul $t2, $a0, $t1         # Row offset = row * 128
+    li $t3, 4                 # Each unit is 4 bytes
+    mul $t4, $a1, $t3         # Column offset = column * 4
+    add $t5, $t2, $t4         # Total offset = row offset + column offset
+    addu $t6, $t0, $t5        # Starting address = base address + offset
+    sw $a2, 0($t6)            # Write pixel to the display
+    jr $ra
