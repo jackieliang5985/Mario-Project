@@ -112,7 +112,27 @@ main:
     # Start the main game loop
 game_loop:
     # 1a. Check if key has been pressed
-    # 1b. Check which key has been pressed
+    lw $t0, ADDR_KBRD        # Load address of the keyboard
+    lw $t8, 0($t0)           # Read the first word from the keyboard
+    beqz $t8, game_loop      # If the value is 0, no key is pressed, keep looping
+
+    # 1b. A key has been pressed
+    lw $a0, 4($t0)           # Load the second word, which contains the key pressed
+    li $v0, 1                # Syscall for printing integer (debugging)
+    move $a0, $a0            # Move the pressed key value to $a0
+    syscall                  # Print the key value (ASCII) to the console
+
+    # Check which key is pressed and move accordingly
+    li $t2, 0x61             # ASCII value for 'a' (move left)
+    li $t3, 0x64             # ASCII value for 'd' (move right)
+    li $t4, 0x77             # ASCII value for 'w' (move up)
+    li $t5, 0x73             # ASCII value for 's' (move down)
+
+    beq $a0, $t2, move_left  # If 'a' is pressed, call move_left
+    beq $a0, $t3, move_right # If 'd' is pressed, call move_right
+    beq $a0, $t4, move_up    # If 'w' is pressed, call move_up
+    beq $a0, $t5, move_down  # If 's' is pressed, call move_down
+
     # 2a. Check for collisions
     # 2b. Update locations (capsules)
     # 3. Draw the screen
@@ -223,4 +243,102 @@ draw_pixel:
     add $t5, $t2, $t4         # Total offset = row offset + column offset
     addu $t6, $t0, $t5        # Starting address = base address + offset
     sw $a2, 0($t6)            # Write pixel to the display
+    jr $ra
+
+# Function to move left
+move_left:
+    # Erase the old capsule (draw it with background color)
+    li $a0, 7                # Row for the capsule
+    li $a1, 15               # Old column position (middle of the grid)
+    li $a2, 0x000000         # Background color (black)
+    jal erase_pixel
+
+    li $a0, 8                # Row for the capsule
+    li $a1, 15               # Old column position (middle of the grid)
+    li $a2, 0x000000         # Background color (black)
+    jal erase_pixel
+
+    # Update capsule's column
+    lw $t0, CAPSULE_COL      # Load current column
+    addi $t0, $t0, -1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL      # Save new column
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+
+# Function to move right
+move_right:
+    # Erase the old capsule
+    li $a0, 7                # Row for the capsule
+    li $a1, 15               # Old column position (middle of the grid)
+    li $a2, 0x000000         # Background color (black)
+    jal erase_pixel
+
+    # Update capsule's column
+    lw $t0, CAPSULE_COL      # Load current column
+    addi $t0, $t0, 1         # Increase by 1 to move right
+    sw $t0, CAPSULE_COL      # Save new column
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+
+# Function to move up
+move_up:
+    # Erase the old capsule
+    li $a0, 7                # Row for the capsule
+    li $a1, 15               # Old column position (middle of the grid)
+    li $a2, 0x000000         # Background color (black)
+    jal erase_pixel
+
+    # Update capsule's row
+    lw $t0, CAPSULE_ROW      # Load current row
+    addi $t0, $t0, -1        # Decrease by 1 to move up
+    sw $t0, CAPSULE_ROW      # Save new row
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+
+# Function to move down
+move_down:
+    # Erase the old capsule
+    li $a0, 7                # Row for the capsule
+    li $a1, 15               # Old column position (middle of the grid)
+    li $a2, 0x000000         # Background color (black)
+    jal erase_pixel
+
+    # Update capsule's row
+    lw $t0, CAPSULE_ROW      # Load current row
+    addi $t0, $t0, 1         # Increase by 1 to move down
+    sw $t0, CAPSULE_ROW      # Save new row
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+# Function to erase the pixel (background color)
+erase_pixel:
+    lw $t0, ADDR_DSPL        # Load base address of display
+    li $t1, 128              # Row offset (128 bytes per row)
+    mul $t2, $a0, $t1        # Row offset = row * 128
+    li $t3, 4                # Each unit is 4 bytes
+    mul $t4, $a1, $t3        # Column offset = column * 4
+    add $t5, $t2, $t4        # Total offset = row offset + column offset
+    addu $t6, $t0, $t5       # Starting address = base address + offset
+    sw $a2, 0($t6)           # Write background color to the location
+    jr $ra
+    
+# Function to draw the capsule at the new position
+draw_capsule:
+    # Draw the first half of the capsule
+    lw $a0, CAPSULE_ROW      # Row for the capsule
+    lw $a1, CAPSULE_COL      # Column for the capsule
+    move $a2, $s0            # Color for the first half
+    jal draw_pixel
+
+    # Draw the second half of the capsule (below the first half)
+    addi $a0, $a0, 1         # Move to the next row
+    move $a2, $s1            # Color for the second half
+    jal draw_pixel
     jr $ra
