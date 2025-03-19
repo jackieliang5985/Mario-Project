@@ -32,8 +32,10 @@ COLOR_GREEN:  .word 0x00ff00  # Green
 COLOR_BLUE:   .word 0x0000ff  # Blue
 
 # Capsule position (middle of the gap)
-CAPSULE_ROW:  .word 7         # Row for the capsule (middle of the gap)
-CAPSULE_COL:  .word 15        # Column for the capsule (middle of the gap)
+CAPSULE_ROW_FIRST:  .word 7         # Row for the capsule (middle of the gap)
+CAPSULE_COL_FIRST:  .word 15        # Column for the capsule (middle of the gap)
+CAPSULE_ROW_SECOND:   .word 8         # Row for the capsule (middle of the gap)
+CAPSULE_COL_SECOND:   .word 15        # Column for the capsule (middle of the gap)
 
 CAPSULE_COLOR1: .word 0 #stores the color of the top capsule pixel
 CAPSULE_COLOR2: .word 0 #stores the color of the bottom capsule pixel
@@ -133,6 +135,7 @@ game_loop:
     li $t4, 0x64             # ASCII value for 'd' (move right)
     li $t5, 0x77             # ASCII value for 'w' (move up)
     li $t6, 0x73             # ASCII value for 's' (move down)
+    li $t7, 0x72              # ASCII value for 'r' (move down)
 
     beq $t2, $t3, move_left  # If 'a' is pressed, move left
     beq $t2, $t4, move_right # If 'd' is pressed, move right
@@ -195,13 +198,13 @@ draw_initial_capsule:
     move $s1, $v0             # Save second color in $s1
 
     # Draw the first half of the capsule
-    lw $a0, CAPSULE_ROW       # Row for the capsule
-    lw $a1, CAPSULE_COL       # Column for the capsule
+    lw $a0, CAPSULE_ROW_FIRST       # Row for the capsule
+    lw $a1, CAPSULE_COL_FIRST      # Column for the capsule
     move $a2, $s0             # Color for the first half
     jal draw_pixel             # Draw the first half
 
-    # Draw the second half of the capsule (below the first half)
-    addi $a0, $a0, 1          # Move to the next row
+    lw $a0, CAPSULE_ROW_SECOND      # Row for the capsule
+    lw $a1, CAPSULE_COL_SECOND       # Column for the capsule
     move $a2, $s1             # Color for the second half
     jal draw_pixel             # Draw the second half
 
@@ -256,32 +259,53 @@ draw_pixel:
 # Function to move the capsule left
 move_left:
     # Erase the old capsule (draw it with background color)
-    lw $a0, CAPSULE_ROW      # Load current row
-    lw $a1, CAPSULE_COL      # Load current column
+    lw $a0, CAPSULE_ROW_FIRST      # Load current row
+    lw $a1, CAPSULE_COL_FIRST      # Load current column
+    li $a2, 0x000000         # Background color (black)
+    jal erase_capsule        # Erase the capsule at the current position
+
+  # Erase the old capsule (draw it with background color)
+    lw $a0, CAPSULE_ROW_SECOND      # Load current row
+    lw $a1, CAPSULE_COL_SECOND     # Load current column
     li $a2, 0x000000         # Background color (black)
     jal erase_capsule        # Erase the capsule at the current position
 
     # Update capsule's column
-    lw $t0, CAPSULE_COL      # Load current column
+    lw $t0, CAPSULE_COL_FIRST      # Load current column
     addi $t0, $t0, -1        # Decrease by 1 to move left
-    sw $t0, CAPSULE_COL      # Save new column
+    sw $t0, CAPSULE_COL_FIRST      # Save new column
+
+    lw $t0, CAPSULE_COL_SECOND      # Load current column
+    addi $t0, $t0, -1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL_SECOND      # Save new column
 
     # Draw the capsule at the new position
     jal draw_capsule
     j game_loop
 
+
 # Function to move the capsule right
 move_right:
     # Erase the old capsule (draw it with background color)
-    lw $a0, CAPSULE_ROW      # Load current row
-    lw $a1, CAPSULE_COL      # Load current column
+    lw $a0, CAPSULE_ROW_FIRST      # Load current row
+    lw $a1, CAPSULE_COL_FIRST     # Load current column
+    li $a2, 0x000000         # Background color (black)
+    jal erase_capsule        # Erase the capsule at the current position
+
+    # Erase the old capsule (draw it with background color)
+    lw $a0, CAPSULE_ROW_SECOND      # Load current row
+    lw $a1, CAPSULE_COL_SECOND      # Load current column
     li $a2, 0x000000         # Background color (black)
     jal erase_capsule        # Erase the capsule at the current position
 
     # Update capsule's column
-    lw $t0, CAPSULE_COL      # Load current column
+    lw $t0, CAPSULE_COL_FIRST      # Load current column
     addi $t0, $t0, 1         # Increase by 1 to move right
-    sw $t0, CAPSULE_COL      # Save new column
+    sw $t0, CAPSULE_COL_FIRST      # Save new column
+
+    lw $t0, CAPSULE_COL_SECOND      # Load current column
+    addi $t0, $t0, 1         # Increase by 1 to move right
+    sw $t0, CAPSULE_COL_SECOND      # Save new column
 
     # Draw the capsule at the new position
     jal draw_capsule
@@ -290,15 +314,25 @@ move_right:
 # Function to move the capsule up
 move_up:
     # Erase the old capsule (draw it with background color)
-    lw $a0, CAPSULE_ROW      # Load current row
-    lw $a1, CAPSULE_COL      # Load current column
+    lw $a0, CAPSULE_ROW_FIRST      # Load current row
+    lw $a1, CAPSULE_COL_FIRST      # Load current column
+    li $a2, 0x000000         # Background color (black)
+    jal erase_capsule        # Erase the capsule at the current position
+
+    lw $a0, CAPSULE_ROW_SECOND      # Load current row
+    lw $a1, CAPSULE_COL_SECOND      # Load current column
     li $a2, 0x000000         # Background color (black)
     jal erase_capsule        # Erase the capsule at the current position
 
     # Update capsule's row
-    lw $t0, CAPSULE_ROW      # Load current row
+    lw $t0, CAPSULE_ROW_FIRST      # Load current row
     addi $t0, $t0, -1        # Decrease by 1 to move up
-    sw $t0, CAPSULE_ROW      # Save new row
+    sw $t0, CAPSULE_ROW_FIRST      # Save new row
+
+    # Update capsule's row
+    lw $t0, CAPSULE_ROW_SECOND      # Load current row
+    addi $t0, $t0, -1        # Decrease by 1 to move up
+    sw $t0, CAPSULE_ROW_SECOND      # Save new row
 
     # Draw the capsule at the new position
     jal draw_capsule
@@ -307,15 +341,25 @@ move_up:
 # Function to move the capsule down
 move_down:
     # Erase the old capsule (draw it with background color)
-    lw $a0, CAPSULE_ROW      # Load current row
-    lw $a1, CAPSULE_COL      # Load current column
+    lw $a0, CAPSULE_ROW_FIRST      # Load current row
+    lw $a1, CAPSULE_COL_FIRST      # Load current column
+    li $a2, 0x000000         # Background color (black)
+    jal erase_capsule        # Erase the capsule at the current position
+
+    lw $a0, CAPSULE_ROW_SECOND      # Load current row
+    lw $a1, CAPSULE_COL_SECOND      # Load current column
     li $a2, 0x000000         # Background color (black)
     jal erase_capsule        # Erase the capsule at the current position
 
     # Update capsule's row
-    lw $t0, CAPSULE_ROW      # Load current row
+    lw $t0, CAPSULE_ROW_FIRST      # Load current row
     addi $t0, $t0, 1         # Increase by 1 to move down
-    sw $t0, CAPSULE_ROW      # Save new row
+    sw $t0, CAPSULE_ROW_FIRST      # Save new row
+
+    # Update capsule's row
+    lw $t0, CAPSULE_ROW_SECOND      # Load current row
+    addi $t0, $t0, 1         # Increase by 1 to move down
+    sw $t0, CAPSULE_ROW_SECOND      # Save new row
 
     # Draw the capsule at the new position
     jal draw_capsule
@@ -355,13 +399,14 @@ erase_capsule:
     
 draw_capsule:
     # Draw the first half of the capsule
-    lw $a0, CAPSULE_ROW      # Row for the capsule
-    lw $a1, CAPSULE_COL      # Column for the capsule
+    lw $a0, CAPSULE_ROW_FIRST      # Row for the capsule
+    lw $a1, CAPSULE_COL_FIRST      # Column for the capsule
     move $a2, $s0            # Color for the first half
     jal draw_pixel
 
-    # Draw the second half of the capsule (below the first half)
-    addi $a0, $a0, 1         # Move to the next row
+    # Draw the first half of the capsule
+    lw $a0, CAPSULE_ROW_SECOND      # Row for the capsule
+    lw $a1, CAPSULE_COL_SECOND      # Column for the capsule
     move $a2, $s1            # Color for the second half
     jal draw_pixel
     j game_loop
