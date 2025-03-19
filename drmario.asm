@@ -125,6 +125,7 @@ game_loop:
     beq $t2, $t4, move_right # If 'd' is pressed, move right
     beq $t2, $t5, move_up    # If 'w' is pressed, move up
     beq $t2, $t6, move_down  # If 's' is pressed, move down
+    beq $t2, $t7, rotate  # If 's' is pressed, move down
     beq $t2, $t8, quit       # if 'q' is pressed, quit
 
 no_input:
@@ -251,6 +252,95 @@ draw_pixel:
     sw $a2, 0($t6)            # Write pixel to the display
     jr $ra
 
+rotate:
+    lw $a0, CAPSULE_ROW_FIRST      # Load current row
+    lw $a1, CAPSULE_COL_FIRST      # Load current column
+    li $a2, 0x000000         # Background color (black)
+    jal erase_capsule        # Erase the capsule at the current position
+
+  # Erase the old capsule (draw it with background color)
+    lw $a0, CAPSULE_ROW_SECOND      # Load current row
+    lw $a1, CAPSULE_COL_SECOND     # Load current column
+    li $a2, 0x000000         # Background color (black)
+    jal erase_capsule        # Erase the capsule at the current positions
+    
+    # Check the current position and rotate accordingly
+    lw $t0, CAPSULE_ROW_FIRST
+    lw $t1, CAPSULE_COL_FIRST
+    lw $t2, CAPSULE_ROW_SECOND
+    lw $t3, CAPSULE_COL_SECOND
+
+    # If the rows are equal, the capsule is sideways
+    beq $t0, $t2, was_sideways     # If first and second rows are equal, it's sideways
+
+    # If the columns are equal, the capsule is upright
+    beq $t1, $t3, was_up           # If first and second columns are equal, it's up
+
+was_sideways:
+    # Handle sideways rotation: Capsule is horizontal (left to right or right to left)
+    # Check which way the capsule is facing (left or right)
+    # If the first column is smaller than the second, it means the capsule is left-to-right.
+    blt $t1, $t3, rotate_left_to_bottom
+    j rotate_right_to_top
+
+rotate_left_to_bottom:
+    lw $t0, CAPSULE_COL_FIRST      # Load current column
+    addi $t0, $t0, +1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL_FIRST      # Save new column
+
+    lw $t0, CAPSULE_ROW_FIRST      # Load current column
+    addi $t0, $t0, +1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_ROW_FIRST      # Save new column
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+
+rotate_right_to_top:
+    lw $t0, CAPSULE_COL_FIRST      # Load current column
+    addi $t0, $t0, -1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL_FIRST      # Save new column
+
+    lw $t0, CAPSULE_ROW_FIRST      # Load current column
+    addi $t0, $t0, -1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_ROW_FIRST      # Save new column
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+
+was_up:
+    # Handle upright rotation: Capsule is vertical (top to bottom or bottom to top)
+    # Check if first segment's row is smaller than the second's row (top to bottom)
+    blt $t0, $t2, rotate_top_to_left
+    j rotate_bottom_to_right
+
+rotate_top_to_left:
+    lw $t0, CAPSULE_COL_FIRST      # Load current column
+    addi $t0, $t0, -1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL_FIRST      # Save new column
+
+    lw $t0, CAPSULE_ROW_FIRST      # Load current column
+    addi $t0, $t0, +1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_ROW_FIRST      # Save new column
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+
+rotate_bottom_to_right:
+    lw $t0, CAPSULE_COL_FIRST      # Load current column
+    addi $t0, $t0, +1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL_FIRST      # Save new column
+
+    lw $t0, CAPSULE_ROW_FIRST      # Load current column
+    addi $t0, $t0, -1        # Decrease by 1 to move left
+    sw $t0, CAPSULE_ROW_FIRST      # Save new column
+
+    # Draw the capsule at the new position
+    jal draw_capsule
+    j game_loop
+    
 # Function to move the capsule left
 move_left:
     # Erase the old capsule (draw it with background color)
