@@ -1,20 +1,3 @@
-################# CSC258 Assembly Final Project ###################
-# This file contains our implementation of Dr Mario.
-#
-# Student 1: Thanush Lingeswaran, 1010292586
-# Student 2: Jackie Liang, 1010279119
-#
-# We assert that the code submitted here is entirely our own 
-# creation, and will indicate otherwise when it is not.
-#
-######################## Bitmap Display Configuration ########################
-# - Unit width in pixels:       8
-# - Unit height in pixels:      8
-# - Display width in pixels:    256
-# - Display height in pixels:   256
-# - Base Address for Display:   0x10008000 ($gp)
-##############################################################################
-
     .data
 ##############################################################################
 # Immutable Data
@@ -34,8 +17,8 @@ COLOR_BLUE:   .word 0x0000ff  # Blue
 # Capsule position (middle of the gap)
 CAPSULE_ROW_FIRST:  .word 7         # Row for the capsule (middle of the gap)
 CAPSULE_COL_FIRST:  .word 15        # Column for the capsule (middle of the gap)
-CAPSULE_ROW_SECOND:   .word 8         # Row for the capsule (middle of the gap)
-CAPSULE_COL_SECOND:   .word 15        # Column for the capsule (middle of the gap)
+CAPSULE_ROW_SECOND: .word 8         # Row for the capsule (middle of the gap)
+CAPSULE_COL_SECOND: .word 15        # Column for the capsule (middle of the gap)
 
 CAPSULE_COLOR1: .word 0 #stores the color of the top capsule pixel
 CAPSULE_COLOR2: .word 0 #stores the color of the bottom capsule pixel
@@ -121,12 +104,12 @@ game_loop:
     lw $t1, 0($t0)
 
     # 2. Check if a key is pressed
-    beqz $t1, game_loop  # If no key, loop
+    beqz $t1, no_input       # If no key, skip input processing
 
     # 3. Read the key value
     lw $t2, 4($t0)
 
-    # 4. Print the key value
+    # 4. Print the key value (optional, for debugging)
     li $v0, 1
     move $a0, $t2
     syscall
@@ -135,23 +118,33 @@ game_loop:
     li $t4, 0x64             # ASCII value for 'd' (move right)
     li $t5, 0x77             # ASCII value for 'w' (move up)
     li $t6, 0x73             # ASCII value for 's' (move down)
-    li $t7, 0x72              # ASCII value for 'r' (move down)
+    li $t7, 0x72             # ASCII value for 'r' (rotate)
 
     beq $t2, $t3, move_left  # If 'a' is pressed, move left
     beq $t2, $t4, move_right # If 'd' is pressed, move right
     beq $t2, $t5, move_up    # If 'w' is pressed, move up
     beq $t2, $t6, move_down  # If 's' is pressed, move down
 
-    # 5. Wait for key release
-key_release_loop:
-    lw $t0, ADDR_KBRD
-    lw $t3, 0($t0)
-    bnez $t3, key_release_loop #loop until key is released
-key_release_loop_end:
+no_input:
+    # 5. Sleep for approximately 16 ms (60 FPS)
+    jal sleep
 
-    # 6. Loop back to read the next key
+    # 6. Loop back to Step 1
     j game_loop
 
+# Function to sleep for approximately 16.67 ms (60 FPS)
+sleep:
+    # Debug: Print "Sleeping..."
+    li $v0, 4                # Syscall for printing a string
+    la $a0, sleeping_msg     # Load address of the string
+    syscall
+
+    # Sleep for 16 ms
+    li $v0, 32               # Syscall for sleep
+    li $a0, 16               # Sleep for 16 ms (approximately 60 FPS)
+    syscall
+
+    jr $ra                   # Return to caller
 # Function to draw a vertical line
 # Arguments: $a0 = start row, $a1 = start column, $a2 = height
 draw_vertical_line:
@@ -416,5 +409,4 @@ draw_capsule:
     moving_right:  .asciiz "moving right\n"
     moving_up:     .asciiz "moving up\n"
     moving_down:   .asciiz "moving down\n"
-
-
+    sleeping_msg: .asciiz "Sleeping...\n"
