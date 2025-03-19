@@ -119,11 +119,13 @@ game_loop:
     li $t5, 0x77             # ASCII value for 'w' (move up)
     li $t6, 0x73             # ASCII value for 's' (move down)
     li $t7, 0x72             # ASCII value for 'r' (rotate)
+    li $t8, 0x71             # ASCII value for 'q' (quit)
 
     beq $t2, $t3, move_left  # If 'a' is pressed, move left
     beq $t2, $t4, move_right # If 'd' is pressed, move right
     beq $t2, $t5, move_up    # If 'w' is pressed, move up
     beq $t2, $t6, move_down  # If 's' is pressed, move down
+    beq $t2, $t8, quit       # if 'q' is pressed, quit
 
 no_input:
     # 5. Sleep for approximately 16 ms (60 FPS)
@@ -330,6 +332,11 @@ move_up:
     # Draw the capsule at the new position
     jal draw_capsule
     j game_loop
+
+quit:
+  # Exit the program
+    li $v0, 10               # Syscall for exit
+    syscall
 
 # Function to move the capsule down
 move_down:
