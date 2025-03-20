@@ -255,17 +255,6 @@
       jr $ra
   
   rotate:
-      lw $a0, CAPSULE_ROW_FIRST      # Load current row
-      lw $a1, CAPSULE_COL_FIRST      # Load current column
-      li $a2, 0x000000         # Background color (black)
-      jal erase_capsule        # Erase the capsule at the current position
-  
-    # Erase the old capsule (draw it with background color)
-      lw $a0, CAPSULE_ROW_SECOND      # Load current row
-      lw $a1, CAPSULE_COL_SECOND     # Load current column
-      li $a2, 0x000000         # Background color (black)
-      jal erase_capsule        # Erase the capsule at the current positions
-      
       # Check the current position and rotate accordingly
       lw $t0, CAPSULE_ROW_FIRST
       lw $t1, CAPSULE_COL_FIRST
@@ -282,10 +271,21 @@
       # Handle sideways rotation: Capsule is horizontal (left to right or right to left)
       # Check which way the capsule is facing (left or right)
       # If the first column is smaller than the second, it means the capsule is left-to-right.
+      beq $t0, 25, no_rotate
       blt $t1, $t3, rotate_left_to_bottom
       j rotate_right_to_top
   
   rotate_left_to_bottom:
+      lw $a0, CAPSULE_ROW_FIRST      # Load current row
+      lw $a1, CAPSULE_COL_FIRST      # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current position
+  
+    # Erase the old capsule (draw it with background color)
+      lw $a0, CAPSULE_ROW_SECOND      # Load current row
+      lw $a1, CAPSULE_COL_SECOND     # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current positions
       lw $t0, CAPSULE_COL_FIRST      # Load current column
       addi $t0, $t0, +1        # Decrease by 1 to move left
       sw $t0, CAPSULE_COL_FIRST      # Save new column
@@ -299,6 +299,16 @@
       j game_loop
   
   rotate_right_to_top:
+      lw $a0, CAPSULE_ROW_FIRST      # Load current row
+      lw $a1, CAPSULE_COL_FIRST      # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current position
+  
+    # Erase the old capsule (draw it with background color)
+      lw $a0, CAPSULE_ROW_SECOND      # Load current row
+      lw $a1, CAPSULE_COL_SECOND     # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current positions
       lw $t0, CAPSULE_COL_FIRST      # Load current column
       addi $t0, $t0, -1        # Decrease by 1 to move left
       sw $t0, CAPSULE_COL_FIRST      # Save new column
@@ -318,6 +328,17 @@
       j rotate_bottom_to_right
   
   rotate_top_to_left:
+      beq $t1, 8, no_rotate
+      lw $a0, CAPSULE_ROW_FIRST      # Load current row
+      lw $a1, CAPSULE_COL_FIRST      # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current position
+  
+    # Erase the old capsule (draw it with background color)
+      lw $a0, CAPSULE_ROW_SECOND      # Load current row
+      lw $a1, CAPSULE_COL_SECOND     # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current positions
       lw $t0, CAPSULE_COL_FIRST      # Load current column
       addi $t0, $t0, -1        # Decrease by 1 to move left
       sw $t0, CAPSULE_COL_FIRST      # Save new column
@@ -331,6 +352,17 @@
       j game_loop
   
   rotate_bottom_to_right:
+      beq $t1, 22, no_rotate
+      lw $a0, CAPSULE_ROW_FIRST      # Load current row
+      lw $a1, CAPSULE_COL_FIRST      # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current position
+  
+    # Erase the old capsule (draw it with background color)
+      lw $a0, CAPSULE_ROW_SECOND      # Load current row
+      lw $a1, CAPSULE_COL_SECOND     # Load current column
+      li $a2, 0x000000         # Background color (black)
+      jal erase_capsule        # Erase the capsule at the current positions
       lw $t0, CAPSULE_COL_FIRST      # Load current column
       addi $t0, $t0, +1        # Decrease by 1 to move left
       sw $t0, CAPSULE_COL_FIRST      # Save new column
@@ -342,7 +374,9 @@
       # Draw the capsule at the new position
       jal draw_capsule
       j game_loop
-      
+
+no_rotate:
+  j game_loop
   # Function to move the capsule left
 # Function to move the capsule left
 move_left:
