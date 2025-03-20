@@ -343,59 +343,94 @@ rotate_bottom_to_right:
     
 # Function to move the capsule left
 move_left:
+    # Check if the capsule is already at the left wall
+    lw $t0, CAPSULE_COL_FIRST      # Load current column of the first capsule pixel
+    lw $t1, CAPSULE_COL_SECOND     # Load current column of the second capsule pixel
+
+    # Find the leftmost column of the capsule
+    move $t2, $t0                  # Assume first part is leftmost
+    blt $t1, $t0, use_second_part_left  # If second part is further left, use it
+    j check_left_bound
+
+use_second_part_left:
+    move $t2, $t1                  # Use second part as leftmost
+
+check_left_bound:
+    ble $t2, 8, no_move_left        # If leftmost column <= 8, do not move left
+
     # Erase the old capsule (draw it with background color)
     lw $a0, CAPSULE_ROW_FIRST      # Load current row
     lw $a1, CAPSULE_COL_FIRST      # Load current column
-    li $a2, 0x000000         # Background color (black)
-    jal erase_capsule        # Erase the capsule at the current position
+    li $a2, 0x000000               # Background color (black)
+    jal erase_capsule              # Erase the capsule at the current position
 
-  # Erase the old capsule (draw it with background color)
-    lw $a0, CAPSULE_ROW_SECOND      # Load current row
+    # Erase the old capsule (draw it with background color)
+    lw $a0, CAPSULE_ROW_SECOND     # Load current row
     lw $a1, CAPSULE_COL_SECOND     # Load current column
-    li $a2, 0x000000         # Background color (black)
-    jal erase_capsule        # Erase the capsule at the current position
+    li $a2, 0x000000               # Background color (black)
+    jal erase_capsule              # Erase the capsule at the current position
 
-    # Update capsule's column
+    # Update capsule's column (move left)
     lw $t0, CAPSULE_COL_FIRST      # Load current column
-    addi $t0, $t0, -1        # Decrease by 1 to move left
+    addi $t0, $t0, -1              # Decrease by 1 to move left
     sw $t0, CAPSULE_COL_FIRST      # Save new column
 
-    lw $t0, CAPSULE_COL_SECOND      # Load current column
-    addi $t0, $t0, -1        # Decrease by 1 to move left
-    sw $t0, CAPSULE_COL_SECOND      # Save new column
+    lw $t0, CAPSULE_COL_SECOND     # Load current column
+    addi $t0, $t0, -1              # Decrease by 1 to move left
+    sw $t0, CAPSULE_COL_SECOND     # Save new column
 
     # Draw the capsule at the new position
     jal draw_capsule
     j game_loop
 
+no_move_left:
+    j game_loop                    # Do nothing if at the left wall
 
 # Function to move the capsule right
 move_right:
+    # Check if the capsule is already at the right wall
+    lw $t0, CAPSULE_COL_FIRST      # Load current column of the first capsule pixel
+    lw $t1, CAPSULE_COL_SECOND     # Load current column of the second capsule pixel
+
+    # Find the rightmost column of the capsule
+    move $t2, $t0                  # Assume first part is rightmost
+    bgt $t1, $t0, use_second_part_right  # If second part is further right, use it
+    j check_right_bound
+
+use_second_part_right:
+    move $t2, $t1                  # Use second part as rightmost
+
+check_right_bound:
+    bge $t2, 22, no_move_right      # If rightmost column >= 22, do not move right
+
     # Erase the old capsule (draw it with background color)
     lw $a0, CAPSULE_ROW_FIRST      # Load current row
-    lw $a1, CAPSULE_COL_FIRST     # Load current column
-    li $a2, 0x000000         # Background color (black)
-    jal erase_capsule        # Erase the capsule at the current position
+    lw $a1, CAPSULE_COL_FIRST      # Load current column
+    li $a2, 0x000000               # Background color (black)
+    jal erase_capsule              # Erase the capsule at the current position
 
     # Erase the old capsule (draw it with background color)
-    lw $a0, CAPSULE_ROW_SECOND      # Load current row
-    lw $a1, CAPSULE_COL_SECOND      # Load current column
-    li $a2, 0x000000         # Background color (black)
-    jal erase_capsule        # Erase the capsule at the current position
+    lw $a0, CAPSULE_ROW_SECOND     # Load current row
+    lw $a1, CAPSULE_COL_SECOND     # Load current column
+    li $a2, 0x000000               # Background color (black)
+    jal erase_capsule              # Erase the capsule at the current position
 
-    # Update capsule's column
+    # Update capsule's column (move right)
     lw $t0, CAPSULE_COL_FIRST      # Load current column
-    addi $t0, $t0, 1         # Increase by 1 to move right
+    addi $t0, $t0, 1               # Increase by 1 to move right
     sw $t0, CAPSULE_COL_FIRST      # Save new column
 
-    lw $t0, CAPSULE_COL_SECOND      # Load current column
-    addi $t0, $t0, 1         # Increase by 1 to move right
-    sw $t0, CAPSULE_COL_SECOND      # Save new column
+    lw $t0, CAPSULE_COL_SECOND     # Load current column
+    addi $t0, $t0, 1               # Increase by 1 to move right
+    sw $t0, CAPSULE_COL_SECOND     # Save new column
 
     # Draw the capsule at the new position
     jal draw_capsule
     j game_loop
 
+no_move_right:
+    j game_loop                    # Do nothing if at the right wall
+    
 # Function to move the capsule up
 move_up:
     # Erase the old capsule (draw it with background color)
@@ -430,30 +465,47 @@ quit:
 
 # Function to move the capsule down
 move_down:
+    # Check if the capsule is already at the bottom wall
+    lw $t0, CAPSULE_ROW_FIRST      # Load current row of the first capsule pixel
+    lw $t1, CAPSULE_ROW_SECOND     # Load current row of the second capsule pixel
+
+    # Find the bottommost row of the capsule
+    move $t2, $t0                  # Assume first part is bottommost
+    bgt $t1, $t0, use_second_part_down  # If second part is further down, use it
+    j check_bottom_bound
+
+use_second_part_down:
+    move $t2, $t1                  # Use second part as bottommost
+
+check_bottom_bound:
+    bge $t2, 25, no_move_down       # If bottommost row >= 25, do not move down
+
     # Erase the old capsule (draw it with background color)
     lw $a0, CAPSULE_ROW_FIRST      # Load current row
     lw $a1, CAPSULE_COL_FIRST      # Load current column
-    li $a2, 0x000000         # Background color (black)
-    jal erase_capsule        # Erase the capsule at the current position
+    li $a2, 0x000000               # Background color (black)
+    jal erase_capsule              # Erase the capsule at the current position
 
-    lw $a0, CAPSULE_ROW_SECOND      # Load current row
-    lw $a1, CAPSULE_COL_SECOND      # Load current column
-    li $a2, 0x000000         # Background color (black)
-    jal erase_capsule        # Erase the capsule at the current position
+    lw $a0, CAPSULE_ROW_SECOND     # Load current row
+    lw $a1, CAPSULE_COL_SECOND     # Load current column
+    li $a2, 0x000000               # Background color (black)
+    jal erase_capsule              # Erase the capsule at the current position
 
-    # Update capsule's row
+    # Update capsule's row (move down)
     lw $t0, CAPSULE_ROW_FIRST      # Load current row
-    addi $t0, $t0, 1         # Increase by 1 to move down
+    addi $t0, $t0, 1               # Increase by 1 to move down
     sw $t0, CAPSULE_ROW_FIRST      # Save new row
 
-    # Update capsule's row
-    lw $t0, CAPSULE_ROW_SECOND      # Load current row
-    addi $t0, $t0, 1         # Increase by 1 to move down
-    sw $t0, CAPSULE_ROW_SECOND      # Save new row
+    lw $t0, CAPSULE_ROW_SECOND     # Load current row
+    addi $t0, $t0, 1               # Increase by 1 to move down
+    sw $t0, CAPSULE_ROW_SECOND     # Save new row
 
     # Draw the capsule at the new position
     jal draw_capsule
     j game_loop
+
+no_move_down:
+    j game_loop                    # Do nothing if at the bottom wall
     
 # Function to erase the pixel (background color)
 erase_pixel:
@@ -474,14 +526,30 @@ erase_capsule:
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
+    # Check if the first part of the capsule is on the bottom line
+    lw $t0, CAPSULE_ROW_FIRST      # Load current row of the first part
+    li $t1, 26                     # Bottom row
+    beq $t0, $t1, skip_erase_first  # If on the bottom row, skip erasing the first part
+
     # Erase the first half of the capsule
-    li $a2, 0x000000         # Black color (background)
-    jal draw_pixel
+    lw $a0, CAPSULE_ROW_FIRST      # Row for the capsule
+    lw $a1, CAPSULE_COL_FIRST      # Column for the capsule
+    li $a2, 0x000000               # Background color (black)
+    jal draw_pixel                 # Erase the first part
+
+skip_erase_first:
+    # Check if the second part of the capsule is on the bottom line
+    lw $t0, CAPSULE_ROW_SECOND     # Load current row of the second part
+    li $t1, 26                     # Bottom row
+    beq $t0, $t1, skip_erase_second # If on the bottom row, skip erasing the second part
 
     # Erase the second half of the capsule
-    addi $a0, $a0, 1         # Move to the next row
-    jal draw_pixel
+    lw $a0, CAPSULE_ROW_SECOND     # Row for the capsule
+    lw $a1, CAPSULE_COL_SECOND     # Column for the capsule
+    li $a2, 0x000000               # Background color (black)
+    jal draw_pixel                 # Erase the second part
 
+skip_erase_second:
     # Restore return address
     lw $ra, 0($sp)
     addi $sp, $sp, 4
