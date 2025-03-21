@@ -763,10 +763,11 @@ check_row_neighbors:
     lw $a1, CAPSULE_COL_FIRST      # Column for the first pixel
     move $a2, $s0                  # Color for the first pixel
     jal check_left_and_right        # Check left and right neighbors for the first pixel
+    
 
     # If 3 or more same-colored pixels, delete them
     li $t0, 3
-    bge $s2, $t0, delete_pixels     # If count >= 3, delete the pixels
+    bge $s2, $t0, delete_row_pixels     # If count >= 3, delete the pixels
 
     # Print the result for the first pixel
     li $v0, 4
@@ -781,15 +782,36 @@ check_row_neighbors:
     la $a0, newline_msg
     syscall
 
+    lw $a0, CAPSULE_ROW_FIRST      # Row for the first pixel
+    lw $a1, CAPSULE_COL_FIRST      # Column for the first pixel
+    move $a2, $s0                  # Color for the first pixel
+    jal check_bottom_and_top
+    li $t0, 3
+    bge $s2, $t0, delete_column_pixels     # If count >= 3, delete the pixels
+
+    # Print the result for the first pixel
+    li $v0, 4
+    la $a0, col_first_pixel_msg
+    syscall
+
+    li $v0, 1
+    move $a0, $s2                  # Print the count of same-colored neighbors
+    syscall
+
+    li $v0, 4
+    la $a0, newline_msg
+    syscall
+    
     # Check row neighbors for the second pixel
     lw $a0, CAPSULE_ROW_SECOND     # Row for the second pixel
     lw $a1, CAPSULE_COL_SECOND     # Column for the second pixel
     move $a2, $s1                  # Color for the second pixel
     jal check_left_and_right        # Check left and right neighbors for the second pixel
+    
 
     # If 3 or more same-colored pixels, delete them
     li $t0, 3
-    bge $s2, $t0, delete_pixels     # If count >= 3, delete the pixels
+    bge $s2, $t0, delete_row_pixels     # If count >= 3, delete the pixels
 
     # Print the result for the second pixel
     li $v0, 4
@@ -804,6 +826,27 @@ check_row_neighbors:
     la $a0, newline_msg
     syscall
 
+    lw $a0, CAPSULE_ROW_SECOND     # Row for the second pixel
+    lw $a1, CAPSULE_COL_SECOND     # Column for the second pixel
+    move $a2, $s1                  # Color for the second pixels
+    jal check_bottom_and_top
+    li $t0, 3
+    bge $s2, $t0, delete_column_pixels     # If count >= 3, delete the pixels
+
+    # Print the result for the second pixel
+    li $v0, 4
+    la $a0, col_second_pixel_msg
+    syscall
+
+    li $v0, 1
+    move $a0, $s2                  # Print the count of same-colored neighbors
+    syscall
+
+    li $v0, 4
+    la $a0, newline_msg
+    syscall
+
+    
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
@@ -831,6 +874,28 @@ check_left_and_right:
 
     # Check to the left
     jal check_left_for_pixel
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+check_bottom_and_top:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize counter for same-colored pixels
+    li $s2, 0  # Counter for same-colored pixels in the row
+
+    # Save the original row for left checking
+    move $t7, $a0
+    # Check to the left
+    jal check_top_for_pixel
+    # Restore the original column for left checking
+    move $a0, $t7
+    # Check to the right
+    jal check_bottom_for_pixel    
 
     # Restore return address and return
     lw $ra, 0($sp)
@@ -893,13 +958,64 @@ check_left_done:
     addi $sp, $sp, 4
     jr $ra
 
-delete_pixels:
+check_bottom_for_pixel:
     # Save return address
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
+check_bottom_loop:
+    # Check the pixel to the right
+    addi $a0, $a0, 1            # Move to the next column to the right
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, check_bottom_done  # If colors don't match, exit the loop
+
+    # Increment the counter
+    addi $s2, $s2, 1
+
+    # Continue checking to the right
+    j check_bottom_loop
+
+check_bottom_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
+check_top_for_pixel:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+check_top_loop:
+    # Check the pixel to the right
+    addi $a0, $a0, -1            # Move to the next row to the right
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, check_top_done  # If colors don't match, exit the loop
+
+    # Increment the counter
+    addi $s2, $s2, 1
+
+    # Continue checking to the right
+    j check_top_loop
+
+check_top_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+delete_pixels:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
     # Delete the pixels in the row
     jal delete_row_pixels
+    jal delete_column_pixels
 
     # Restore return address and return
     lw $ra, 0($sp)
@@ -922,10 +1038,28 @@ delete_row_pixels:
     addi $sp, $sp, 4
     jr $ra
 
-delete_right_pixels:
+delete_column_pixels:
     # Save return address
     addi $sp, $sp, -4
     sw $ra, 0($sp)
+    
+    # Delete pixels to the right
+    jal delete_bottom_pixels
+
+    # Delete pixels to the left
+    jal delete_top_pixels
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+delete_right_pixels:
+    # Save return address
+    addi $sp, $sp, -12          
+    sw $ra, 0($sp)              
+    sw $a0, 4($sp)              # Save row index
+    sw $a1, 8($sp)              # Save column index
 
 delete_right_loop:
     # Check the pixel to the right
@@ -944,14 +1078,17 @@ delete_right_loop:
 
 delete_right_done:
     # Restore return address and return
+    lw $a1, 8($sp)              
+    lw $a0, 4($sp)              
     lw $ra, 0($sp)
-    addi $sp, $sp, 4
+    addi $sp, $sp, 12
     jr $ra
 
 delete_left_pixels:
-    # Save return address
-    addi $sp, $sp, -4
+    addi $sp, $sp, -12
     sw $ra, 0($sp)
+    sw $a0, 4($sp)
+    sw $a1, 8($sp)
 
 delete_left_loop:
     # Check the pixel to the left
@@ -969,11 +1106,69 @@ delete_left_loop:
     j delete_left_loop
 
 delete_left_done:
-    # Restore return address and return
+    lw $a1, 8($sp)
+    lw $a0, 4($sp)
     lw $ra, 0($sp)
-    addi $sp, $sp, 4
+    addi $sp, $sp, 12
     jr $ra
 
+delete_bottom_pixels:
+    addi $sp, $sp, -12
+    sw $ra, 0($sp)
+    sw $a0, 4($sp)
+    sw $a1, 8($sp)
+
+delete_bottom_loop:
+    # Check the pixel to the right
+    addi $a0, $a0, 1            # Move to the next column to the right
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, delete_bottom_done  # If colors don't match, exit the loop
+
+    # Delete the pixel (set it to black)
+    li $a2, 0x000000            # Background color (black)
+    jal draw_pixel              # Erase the pixel
+
+    # Continue deleting to the right
+    j delete_bottom_loop
+
+delete_bottom_done:
+    lw $a1, 8($sp)
+    lw $a0, 4($sp)
+    lw $ra, 0($sp)
+    addi $sp, $sp, 12
+    jr $ra
+
+delete_top_pixels:
+    addi $sp, $sp, -12
+    sw $ra, 0($sp)
+    sw $a0, 4($sp)
+    sw $a1, 8($sp)
+
+
+delete_top_loop:
+    # Check the pixel to the right
+    addi $a0, $a0, -1            # Move to the next column to the right
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, delete_top_done  # If colors don't match, exit the loop
+
+    # Delete the pixel (set it to black)
+    li $a2, 0x000000            # Background color (black)
+    jal draw_pixel              # Erase the pixel
+
+    # Continue deleting to the right
+    j delete_top_loop
+
+delete_top_done:
+    lw $a1, 8($sp)
+    lw $a0, 4($sp)
+    lw $ra, 0($sp)
+    addi $sp, $sp, 12
+    jr $ra
+    
 # Function to check the color of a pixel
 # Input: $a0 = row, $a1 = column
 # Output: $v0 = color of the pixel at (row, column)
@@ -1002,5 +1197,9 @@ check_pixel_color:
       sleeping_msg: .asciiz "Sleeping...\n"
       same_color_right_msg: .asciiz "Same-colored pixels to the right: "
     first_pixel_msg:  .asciiz "First pixel - Same-colored pixels in the row: "
+    extra:  .asciiz "Fixing: "
+    extra1:  .asciiz "Fixing1: "
+    col_first_pixel_msg:  .asciiz "First pixel - Same-colored pixels in the column: "
     second_pixel_msg: .asciiz "Second pixel - Same-colored pixels in the row: "
+    col_second_pixel_msg: .asciiz "Second pixel - Same-colored pixels in the column: "
     newline_msg:      .asciiz "\n"
