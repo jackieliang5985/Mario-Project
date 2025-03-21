@@ -711,6 +711,10 @@ check_row_neighbors:
     move $a2, $s0                  # Color for the first pixel
     jal check_left_and_right        # Check left and right neighbors for the first pixel
 
+    # If 3 or more same-colored pixels, delete them
+    li $t0, 3
+    bge $s2, $t0, delete_pixels     # If count >= 3, delete the pixels
+
     # Print the result for the first pixel
     li $v0, 4
     la $a0, first_pixel_msg
@@ -729,6 +733,10 @@ check_row_neighbors:
     lw $a1, CAPSULE_COL_SECOND     # Column for the second pixel
     move $a2, $s1                  # Color for the second pixel
     jal check_left_and_right        # Check left and right neighbors for the second pixel
+
+    # If 3 or more same-colored pixels, delete them
+    li $t0, 3
+    bge $s2, $t0, delete_pixels     # If count >= 3, delete the pixels
 
     # Print the result for the second pixel
     li $v0, 4
@@ -827,6 +835,87 @@ check_left_loop:
     j check_left_loop
 
 check_left_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+delete_pixels:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Delete the pixels in the row
+    jal delete_row_pixels
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+delete_row_pixels:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Delete pixels to the right
+    jal delete_right_pixels
+
+    # Delete pixels to the left
+    jal delete_left_pixels
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+delete_right_pixels:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+delete_right_loop:
+    # Check the pixel to the right
+    addi $a1, $a1, 1            # Move to the next column to the right
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, delete_right_done  # If colors don't match, exit the loop
+
+    # Delete the pixel (set it to black)
+    li $a2, 0x000000            # Background color (black)
+    jal draw_pixel              # Erase the pixel
+
+    # Continue deleting to the right
+    j delete_right_loop
+
+delete_right_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+delete_left_pixels:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+delete_left_loop:
+    # Check the pixel to the left
+    addi $a1, $a1, -1           # Move to the next column to the left
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, delete_left_done  # If colors don't match, exit the loop
+
+    # Delete the pixel (set it to black)
+    li $a2, 0x000000            # Background color (black)
+    jal draw_pixel              # Erase the pixel
+
+    # Continue deleting to the left
+    j delete_left_loop
+
+delete_left_done:
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
