@@ -19,7 +19,13 @@
   CAPSULE_COL_FIRST:  .word 15        # Column for the capsule (middle of the gap)
   CAPSULE_ROW_SECOND: .word 8         # Row for the capsule (middle of the gap)
   CAPSULE_COL_SECOND: .word 15        # Column for the capsule (middle of the gap)
-  
+
+  # Initial capsule positions (middle of the gap)
+  CAPSULE_ROW_FIRST_INITIAL:  .word 7         # Initial row for the first part
+  CAPSULE_COL_FIRST_INITIAL:  .word 15        # Initial column for the first part
+  CAPSULE_ROW_SECOND_INITIAL: .word 8         # Initial row for the second part
+  CAPSULE_COL_SECOND_INITIAL: .word 15        # Initial column for the second part
+
   CAPSULE_COLOR1: .word 0 #stores the color of the top capsule pixel
   CAPSULE_COLOR2: .word 0 #stores the color of the bottom capsule pixel
   
@@ -270,35 +276,35 @@ check_pixel:
     beq $t7, 0x000000, pixel_is_black  # If pixel is black, set $v0 = 1
     jr $ra                    # Return 0 (pixel is not black)
 
-pixel_is_black:
-    li $v0, 1                 # Pixel is black
-    jr $ra
-
-  # Function to check capsule orientation
-# Returns: $v0 = 0 if vertical, 1 if horizontal
-check_orientation:
-    lw $t0, CAPSULE_ROW_FIRST
-    lw $t1, CAPSULE_ROW_SECOND
-    beq $t0, $t1, horizontal_orientation  # If rows are equal, capsule is horizontal
-    li $v0, 0                            # Otherwise, capsule is vertical
-    jr $ra
-
-horizontal_orientation:
-    li $v0, 1
-    jr $ra
-
-find_leftmost_rightmost:
-    lw $t0, CAPSULE_COL_FIRST      # Load column of the first part
-    lw $t1, CAPSULE_COL_SECOND     # Load column of the second part
-    blt $t0, $t1, leftmost_first   # If first part is leftmost, jump
-    move $v0, $t1                  # Otherwise, second part is leftmost
-    move $v1, $t0                  # First part is rightmost
-    jr $ra
-
-leftmost_first:
-    move $v0, $t0                  # First part is leftmost
-    move $v1, $t1                  # Second part is rightmost
-    jr $ra
+  pixel_is_black:
+      li $v0, 1                 # Pixel is black
+      jr $ra
+  
+    # Function to check capsule orientation
+  # Returns: $v0 = 0 if vertical, 1 if horizontal
+  check_orientation:
+      lw $t0, CAPSULE_ROW_FIRST
+      lw $t1, CAPSULE_ROW_SECOND
+      beq $t0, $t1, horizontal_orientation  # If rows are equal, capsule is horizontal
+      li $v0, 0                            # Otherwise, capsule is vertical
+      jr $ra
+  
+  horizontal_orientation:
+      li $v0, 1
+      jr $ra
+  
+  find_leftmost_rightmost:
+      lw $t0, CAPSULE_COL_FIRST      # Load column of the first part
+      lw $t1, CAPSULE_COL_SECOND     # Load column of the second part
+      blt $t0, $t1, leftmost_first   # If first part is leftmost, jump
+      move $v0, $t1                  # Otherwise, second part is leftmost
+      move $v1, $t0                  # First part is rightmost
+      jr $ra
+  
+  leftmost_first:
+      move $v0, $t0                  # First part is leftmost
+      move $v1, $t1                  # Second part is rightmost
+      jr $ra
 
   rotate:
       # Check the current position and rotate accordingly
@@ -421,160 +427,214 @@ leftmost_first:
       jal draw_capsule
       j game_loop
 
-no_rotate:
-  j game_loop
+  no_rotate:
+    j game_loop
+    # Function to move the capsule left
   # Function to move the capsule left
-# Function to move the capsule left
-move_left:
-    # Check capsule orientation
-    jal check_orientation
-    beqz $v0, vertical_left  # If vertical, handle vertical movement
-    j horizontal_left        # If horizontal, handle horizontal movement
+  move_left:
+      # Check capsule orientation
+      jal check_orientation
+      beqz $v0, vertical_left  # If vertical, handle vertical movement
+      j horizontal_left        # If horizontal, handle horizontal movement
+  
+  vertical_left:
+      # Check the pixel to the left of the capsule
+      lw $a0, CAPSULE_ROW_FIRST
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a1, $a1, -1           # Check the column to the left
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, no_move_left      # If not black, do not move
 
-vertical_left:
-    # Check the pixel to the left of the capsule
-    lw $a0, CAPSULE_ROW_FIRST
-    lw $a1, CAPSULE_COL_FIRST
-    addi $a1, $a1, -1           # Check the column to the left
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_left      # If not black, do not move
-    j update_left               # Otherwise, update position
+      lw $a0, CAPSULE_ROW_SECOND
+      lw $a1, CAPSULE_COL_SECOND
+      addi $a1, $a1, -1           # Check the column to the left
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, no_move_left      # If not black, do not move
+      j update_left               # Otherwise, update position
 
-horizontal_left:
-    # Find the leftmost part of the capsule
-    jal find_leftmost_rightmost
-    move $a1, $v0               # Use the column of the leftmost part
+  horizontal_left:
+      # Find the leftmost part of the capsule
+      jal find_leftmost_rightmost
+      move $a1, $v0               # Use the column of the leftmost part
+  
+      # Check the pixel to the left of the leftmost part
+      lw $a0, CAPSULE_ROW_FIRST   # Use the row of the capsule
+      addi $a1, $a1, -1           # Check the column to the left
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, no_move_left      # If not black, do not move
 
-    # Check the pixel to the left of the leftmost part
-    lw $a0, CAPSULE_ROW_FIRST   # Use the row of the capsule
-    addi $a1, $a1, -1           # Check the column to the left
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_left      # If not black, do not move
+  update_left:
+      # Erase the old capsule
+      jal erase_capsule
+  
+      # Update capsule's column (move left)
+      lw $t0, CAPSULE_COL_FIRST
+      addi $t0, $t0, -1           # Decrease by 1 to move left
+      sw $t0, CAPSULE_COL_FIRST
+  
+      lw $t0, CAPSULE_COL_SECOND
+      addi $t0, $t0, -1           # Decrease by 1 to move left
+      sw $t0, CAPSULE_COL_SECOND
+  
+      # Draw the capsule at the new position
+      jal draw_capsule
+      j game_loop
 
-update_left:
-    # Erase the old capsule
-    jal erase_capsule
+  no_move_left:
+      j game_loop                 # Do nothing if movement is blocked
+      
+  
+   # Function to move the capsule right
+  move_right:
+      # Check capsule orientation
+      jal check_orientation
+      beqz $v0, vertical_right  # If vertical, handle vertical movement
+      j horizontal_right        # If horizontal, handle horizontal movement
+  
+  vertical_right:
+      # Check the pixel to the right of the capsule
+      lw $a0, CAPSULE_ROW_FIRST
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a1, $a1, 1            # Check the column to the right
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, no_move_right     # If not black, do not move
 
-    # Update capsule's column (move left)
-    lw $t0, CAPSULE_COL_FIRST
-    addi $t0, $t0, -1           # Decrease by 1 to move left
-    sw $t0, CAPSULE_COL_FIRST
+      lw $a0, CAPSULE_ROW_SECOND
+      lw $a1, CAPSULE_COL_SECOND
+      addi $a1, $a1, 1            # Check the column to the right
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, no_move_right     # If not black, do not move
+      j update_right              # Otherwise, update position
 
-    lw $t0, CAPSULE_COL_SECOND
-    addi $t0, $t0, -1           # Decrease by 1 to move left
-    sw $t0, CAPSULE_COL_SECOND
+  horizontal_right:
+      # Find the rightmost part of the capsule
+      jal find_leftmost_rightmost
+      move $a1, $v1               # Use the column of the rightmost part
+  
+      # Check the pixel to the right of the rightmost part
+      lw $a0, CAPSULE_ROW_FIRST   # Use the row of the capsule
+      addi $a1, $a1, 1            # Check the column to the right
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, no_move_right     # If not black, do not move
 
-    # Draw the capsule at the new position
-    jal draw_capsule
-    j game_loop
+  update_right:
+      # Erase the old capsule
+      jal erase_capsule
+  
+      # Update capsule's column (move right)
+      lw $t0, CAPSULE_COL_FIRST
+      addi $t0, $t0, 1            # Increase by 1 to move right
+      sw $t0, CAPSULE_COL_FIRST
+  
+      lw $t0, CAPSULE_COL_SECOND
+      addi $t0, $t0, 1            # Increase by 1 to move right
+      sw $t0, CAPSULE_COL_SECOND
+  
+      # Draw the capsule at the new position
+      jal draw_capsule
+      j game_loop
 
-no_move_left:
-    j game_loop                 # Do nothing if movement is blocked
-    
-    
- # Function to move the capsule right
-move_right:
-    # Check capsule orientation
-    jal check_orientation
-    beqz $v0, vertical_right  # If vertical, handle vertical movement
-    j horizontal_right        # If horizontal, handle horizontal movement
-
-vertical_right:
-    # Check the pixel to the right of the capsule
-    lw $a0, CAPSULE_ROW_FIRST
-    lw $a1, CAPSULE_COL_FIRST
-    addi $a1, $a1, 1            # Check the column to the right
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_right     # If not black, do not move
-    j update_right              # Otherwise, update position
-
-horizontal_right:
-    # Find the rightmost part of the capsule
-    jal find_leftmost_rightmost
-    move $a1, $v1               # Use the column of the rightmost part
-
-    # Check the pixel to the right of the rightmost part
-    lw $a0, CAPSULE_ROW_FIRST   # Use the row of the capsule
-    addi $a1, $a1, 1            # Check the column to the right
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_right     # If not black, do not move
-
-update_right:
-    # Erase the old capsule
-    jal erase_capsule
-
-    # Update capsule's column (move right)
-    lw $t0, CAPSULE_COL_FIRST
-    addi $t0, $t0, 1            # Increase by 1 to move right
-    sw $t0, CAPSULE_COL_FIRST
-
-    lw $t0, CAPSULE_COL_SECOND
-    addi $t0, $t0, 1            # Increase by 1 to move right
-    sw $t0, CAPSULE_COL_SECOND
-
-    # Draw the capsule at the new position
-    jal draw_capsule
-    j game_loop
-
-no_move_right:
-    j game_loop                 # Do nothing if movement is blocked
-    
+  no_move_right:
+      j game_loop                 # Do nothing if movement is blocked
+      
   quit:
     # Exit the program
       li $v0, 10               # Syscall for exit
       syscall
   
   # Function to move the capsule down
-move_down:
-    # Check capsule orientation
-    jal check_orientation
-    beqz $v0, vertical_down  # If vertical, handle vertical movement
-    j horizontal_down        # If horizontal, handle horizontal movement
-
-vertical_down:
-    # Check the pixel below the bottom part of the capsule
-    lw $a0, CAPSULE_ROW_SECOND  # Use the bottom row for vertical capsules
-    lw $a1, CAPSULE_COL_FIRST   # Use the column of the capsule
-    addi $a0, $a0, 1            # Check the row below
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_down      # If not black, do not move
-    j update_down               # Otherwise, update position
-
-horizontal_down:
-    # Check the pixel below the first part of the capsule
-    lw $a0, CAPSULE_ROW_FIRST
-    lw $a1, CAPSULE_COL_FIRST
-    addi $a0, $a0, 1            # Check the row below
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_down      # If not black, do not move
-
-    # Check the pixel below the second part of the capsule
-    lw $a0, CAPSULE_ROW_SECOND
-    lw $a1, CAPSULE_COL_SECOND
-    addi $a0, $a0, 1            # Check the row below
-    jal check_pixel             # Check if the pixel is black
-    beqz $v0, no_move_down      # If not black, do not move
-
-update_down:
-    # Erase the old capsule
-    jal erase_capsule
-
-    # Update capsule's row (move down)
-    lw $t0, CAPSULE_ROW_FIRST
-    addi $t0, $t0, 1            # Increase by 1 to move down
-    sw $t0, CAPSULE_ROW_FIRST
-
-    lw $t0, CAPSULE_ROW_SECOND
-    addi $t0, $t0, 1            # Increase by 1 to move down
-    sw $t0, CAPSULE_ROW_SECOND
-
-    # Draw the capsule at the new position
-    jal draw_capsule
-    j game_loop
-
-no_move_down:
-    j game_loop                 # Do nothing if movement is blocked
-    
+  move_down:
+      # Check capsule orientation
+      jal check_orientation
+      beqz $v0, vertical_down  # If vertical, handle vertical movement
+      j horizontal_down        # If horizontal, handle horizontal movement
+  
+  vertical_down:
+      # Determine which part of the capsule is the bottommost
+      lw $t0, CAPSULE_ROW_FIRST   # Load row of the first part
+      lw $t1, CAPSULE_ROW_SECOND  # Load row of the second part
+  
+      # Compare the rows to find the bottommost pixel
+      bge $t0, $t1, first_is_bottom  # If first row >= second row, first is bottom
+      j second_is_bottom             # Otherwise, second is bottom
+  
+  first_is_bottom:
+      # First part is the bottommost
+      move $a0, $t0                 # Use the row of the first part
+      lw $a1, CAPSULE_COL_FIRST     # Use the column of the first part
+      j check_below
+  
+  second_is_bottom:
+      # Second part is the bottommost
+      move $a0, $t1                 # Use the row of the second part
+      lw $a1, CAPSULE_COL_SECOND    # Use the column of the second part
+  
+  check_below:
+      # Check the pixel below the bottommost part
+      addi $a0, $a0, 1              # Check the row below
+      jal check_pixel               # Check if the pixel is black
+      beqz $v0, place_capsule       # If not black, place the capsule and initialize a new one
+      j update_down                 # Otherwise, update position
+  
+  horizontal_down:
+      # Check the pixel below the first part of the capsule
+      lw $a0, CAPSULE_ROW_FIRST
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a0, $a0, 1            # Check the row below
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, place_capsule     # If not black, place the capsule and initialize a new one
+  
+      # Check the pixel below the second part of the capsule
+      lw $a0, CAPSULE_ROW_SECOND
+      lw $a1, CAPSULE_COL_SECOND
+      addi $a0, $a0, 1            # Check the row below
+      jal check_pixel             # Check if the pixel is black
+      beqz $v0, place_capsule     # If not black, place the capsule and initialize a new one
+  
+  update_down:
+      # Erase the old capsule
+      jal erase_capsule
+  
+      # Update capsule's row (move down)
+      lw $t0, CAPSULE_ROW_FIRST
+      addi $t0, $t0, 1            # Increase by 1 to move down
+      sw $t0, CAPSULE_ROW_FIRST
+  
+      lw $t0, CAPSULE_ROW_SECOND
+      addi $t0, $t0, 1            # Increase by 1 to move down
+      sw $t0, CAPSULE_ROW_SECOND
+  
+      # Draw the capsule at the new position
+      jal draw_capsule
+      j game_loop
+  
+  place_capsule:
+      # Color the current position of the capsule
+      lw $a0, CAPSULE_ROW_FIRST
+      lw $a1, CAPSULE_COL_FIRST
+      move $a2, $s0            # Color for the first half
+      jal draw_pixel
+  
+      lw $a0, CAPSULE_ROW_SECOND
+      lw $a1, CAPSULE_COL_SECOND
+      move $a2, $s1            # Color for the second half
+      jal draw_pixel
+  
+      # Reset capsule position to the initial position (middle of the gap)
+      lw $t0, CAPSULE_ROW_FIRST_INITIAL  # Load initial row for the first part
+      sw $t0, CAPSULE_ROW_FIRST          # Reset to initial row
+      lw $t0, CAPSULE_COL_FIRST_INITIAL  # Load initial column for the first part
+      sw $t0, CAPSULE_COL_FIRST          # Reset to initial column
+  
+      lw $t0, CAPSULE_ROW_SECOND_INITIAL # Load initial row for the second part
+      sw $t0, CAPSULE_ROW_SECOND         # Reset to initial row
+      lw $t0, CAPSULE_COL_SECOND_INITIAL # Load initial column for the second part
+      sw $t0, CAPSULE_COL_SECOND         # Reset to initial column
+  
+      # Initialize a new capsule
+      jal draw_initial_capsule
+      j game_loop
+      
   # Function to erase the pixel (background color)
   erase_pixel:
       lw $t0, ADDR_DSPL        # Load base address of display
