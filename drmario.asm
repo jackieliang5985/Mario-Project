@@ -99,7 +99,20 @@
       li $a1, 19                # Start at column 19
       li $a2, 2                 # Height of the vertical line (2 pixels)
       jal draw_vertical_line
-  
+
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      
+      jal get_random_location
+      move $a1, $v0
+
+
+      jal get_random_location
+      move $a0, $v0            # Color for the first half
+      
+      jal draw_pixel             # Draw the first halfs
+      
       # Draw the initial capsule in the middle of the gap
       jal draw_initial_capsule
       j game_loop
@@ -246,6 +259,46 @@
   
   select_blue:
       lw $v0, 0($t2)            # Load blue color
+      jr $ra
+
+
+  get_random_location:
+      # Generate a random number between 0 and 2
+      li $v0, 42                # Syscall for random number
+      li $a0, 0                 # Random number generator ID
+      li $a3, 7                 # Upper bound (exclusive)
+      syscall
+  
+      # Use the random number to select a color
+      beq $a0, 0, select_four    # If 0, select red
+      beq $a0, 1, select_five  # If 1, select green
+      beq $a0, 2, select_six   # If 2, select blue
+      beq $a0, 3, select_seven    # If 0, select red
+      beq $a0, 4, select_eight  # If 1, select green
+      beq $a0, 5, select_nine   # If 2, select blue
+
+  select_four:
+      li $v0, 14           # Load red color
+      jr $ra
+  
+  select_five:
+      li $v0, 16            # Load green color
+      jr $ra
+  
+  select_six:
+      li $v0, 17            # Load blue color
+      jr $ra
+
+  select_seven:
+      li $v0, 18           # Load red color
+      jr $ra
+  
+  select_eight:
+      li $v0, 19            # Load green color
+      jr $ra
+  
+  select_nine:
+      li $v0, 20            # Load blue color
       jr $ra
   
   # Function to draw a pixel
