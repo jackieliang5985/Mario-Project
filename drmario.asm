@@ -137,8 +137,8 @@
   
   no_input:
       # 5. Sleep for approximately 16 ms (60 FPS)
-      jal sleep
-      j move_down
+      # jal sleep
+      # j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -620,6 +620,8 @@ check_pixel:
       lw $a1, CAPSULE_COL_SECOND
       move $a2, $s1            # Color for the second half
       jal draw_pixel
+
+      jal check_row_neighbors
   
       # Reset capsule position to the initial position (middle of the gap)
       lw $t0, CAPSULE_ROW_FIRST_INITIAL  # Load initial row for the first part
@@ -697,6 +699,158 @@ check_pixel:
       move $a2, $s1            # Color for the second half
       jal draw_pixel
       j game_loop
+
+check_row_neighbors:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Check row neighbors for the first pixel
+    lw $a0, CAPSULE_ROW_FIRST      # Row for the first pixel
+    lw $a1, CAPSULE_COL_FIRST      # Column for the first pixel
+    move $a2, $s0                  # Color for the first pixel
+    jal check_left_and_right        # Check left and right neighbors for the first pixel
+
+    # Print the result for the first pixel
+    li $v0, 4
+    la $a0, first_pixel_msg
+    syscall
+
+    li $v0, 1
+    move $a0, $s2                  # Print the count of same-colored neighbors
+    syscall
+
+    li $v0, 4
+    la $a0, newline_msg
+    syscall
+
+    # Check row neighbors for the second pixel
+    lw $a0, CAPSULE_ROW_SECOND     # Row for the second pixel
+    lw $a1, CAPSULE_COL_SECOND     # Column for the second pixel
+    move $a2, $s1                  # Color for the second pixel
+    jal check_left_and_right        # Check left and right neighbors for the second pixel
+
+    # Print the result for the second pixel
+    li $v0, 4
+    la $a0, second_pixel_msg
+    syscall
+
+    li $v0, 1
+    move $a0, $s2                  # Print the count of same-colored neighbors
+    syscall
+
+    li $v0, 4
+    la $a0, newline_msg
+    syscall
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+# Function to check left and right neighbors for a single pixel
+# Arguments: $a0 = row, $a1 = column, $a2 = color
+# Returns: $s2 = count of same-colored neighbors in the row
+check_left_and_right:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize counter for same-colored pixels
+    li $s2, 0  # Counter for same-colored pixels in the row
+
+    # Save the original column for left checking
+    move $t7, $a1
+
+    # Check to the right
+    jal check_right_for_pixel
+
+    # Restore the original column for left checking
+    move $a1, $t7
+
+    # Check to the left
+    jal check_left_for_pixel
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+# Function to check right neighbors for a single pixel
+# Arguments: $a0 = row, $a1 = column, $a2 = color
+# Returns: $s2 = count of same-colored neighbors to the right
+check_right_for_pixel:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+check_right_loop:
+    # Check the pixel to the right
+    addi $a1, $a1, 1            # Move to the next column to the right
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, check_right_done  # If colors don't match, exit the loop
+
+    # Increment the counter
+    addi $s2, $s2, 1
+
+    # Continue checking to the right
+    j check_right_loop
+
+check_right_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+# Function to check left neighbors for a single pixel
+# Arguments: $a0 = row, $a1 = column, $a2 = color
+# Returns: $s2 = count of same-colored neighbors to the left
+check_left_for_pixel:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+check_left_loop:
+    # Check the pixel to the left
+    addi $a1, $a1, -1           # Move to the next column to the left
+    jal check_pixel_color       # Check the color of the pixel
+
+    # Compare the color with the capsule color
+    bne $v0, $a2, check_left_done  # If colors don't match, exit the loop
+
+    # Increment the counter
+    addi $s2, $s2, 1
+
+    # Continue checking to the left
+    j check_left_loop
+
+check_left_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+# Function to check the color of a pixel
+# Input: $a0 = row, $a1 = column
+# Output: $v0 = color of the pixel at (row, column)
+check_pixel_color:
+    # Load base address of the display
+    lw $t0, ADDR_DSPL         # Load base address of display
+
+    # Calculate the offset for the given row and column
+    li $t1, 128               # Number of bytes per row (32 columns * 4 bytes per pixel)
+    mul $t2, $a0, $t1         # Row offset = row * 128
+    li $t3, 4                 # Each pixel is 4 bytes
+    mul $t4, $a1, $t3         # Column offset = column * 4
+    add $t5, $t2, $t4         # Total offset = row offset + column offset
+    addu $t6, $t0, $t5        # Pixel address = base address + offset
+
+    # Load the color of the pixel
+    lw $v0, 0($t6)            # Load the color of the pixel
+    jr $ra                    # Return the color in $v0
+      
   
   .data
       moving_left:   .asciiz "moving left\n"
@@ -704,3 +858,7 @@ check_pixel:
       moving_up:     .asciiz "moving up\n"
       moving_down:   .asciiz "moving down\n"
       sleeping_msg: .asciiz "Sleeping...\n"
+      same_color_right_msg: .asciiz "Same-colored pixels to the right: "
+    first_pixel_msg:  .asciiz "First pixel - Same-colored pixels in the row: "
+    second_pixel_msg: .asciiz "Second pixel - Same-colored pixels in the row: "
+    newline_msg:      .asciiz "\n"
