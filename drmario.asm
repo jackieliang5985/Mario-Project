@@ -132,7 +132,6 @@
       beq $t2, $t6, move_down  # If 's' is pressed, move down
       beq $t2, $t7, rotate  # If 's' is pressed, move down
       beq $t2, $t8, quit       # if 'q' is pressed, quit
-  
       j game_loop
   
   
@@ -153,8 +152,9 @@
   
       # Sleep for 16 ms
       li $v0, 32               # Syscall for sleep
-      li $a0, 256               # Sleep for 32 ms (approximately 60 FPS)
+      li $a0, 60               # Sleep for 200 ms (approximately 60 FPS)
       syscall
+      j move_down
   
       jr $ra                   # Return to caller
   # Function to draw a vertical line
