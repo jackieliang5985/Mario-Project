@@ -139,6 +139,7 @@
   no_input:
       # 5. Sleep for approximately 16 ms (60 FPS)
       jal sleep
+      j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -152,7 +153,7 @@
   
       # Sleep for 16 ms
       li $v0, 32               # Syscall for sleep
-      li $a0, 16               # Sleep for 16 ms (approximately 60 FPS)
+      li $a0, 256               # Sleep for 32 ms (approximately 60 FPS)
       syscall
   
       jr $ra                   # Return to caller
