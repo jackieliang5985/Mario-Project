@@ -851,7 +851,7 @@ check_row_neighbors:
     jal check_bottom_and_top
 
     # Check if the count of same-colored neighbors is greater than or equal to 3
-    li $t0, 3
+    li $t0, 4
     bge $s2, $t0, delete_first_vertical_segment  # If $s2 >= 3, delete the vertical segment
 
     #### DEBUGGING SECOND PIXEL ####
@@ -862,7 +862,7 @@ check_row_neighbors:
     jal check_left_and_right
 
     # Check if the count of same-colored neighbors is greater than or equal to 3
-    li $t0, 3
+    li $t0, 4
     bge $s2, $t0, delete_second_segment  # If $s2 >= 3, delete the segment
 
     # Check vertical neighbors for the second pixel
@@ -872,7 +872,7 @@ check_row_neighbors:
     jal check_bottom_and_top
 
     # Check if the count of same-colored neighbors is greater than or equal to 3
-    li $t0, 3
+    li $t0, 4
     bge $s2, $t0, delete_second_vertical_segment  # If $s2 >= 3, delete the vertical segment
 
     # Restore return address and return
@@ -885,10 +885,9 @@ delete_first_vertical_segment:
     lw $a0, CAPSULE_ROW_FIRST      # Start row
     lw $a1, CAPSULE_COL_FIRST      # Column
 
-    # Calculate the end row (one row below the last row of the segment)
+    # Set the end row to $s4 (last row of the segment)
     move $a2, $s4                  # $s4 contains the last row of the segment
-    addi $a2, $a2, 1               # Set $a2 to one row below the last row
-
+    subu $t8, $t6, $t1         # Address of the pixel above (row - 1)
     jal delete_vertical_segment     # Call the function to delete the vertical segment
     j check_row_neighbors_end       # Jump to the end of the function
 
@@ -897,7 +896,7 @@ delete_second_vertical_segment:
     lw $a0, CAPSULE_ROW_SECOND     # Start row
     lw $a1, CAPSULE_COL_SECOND     # Column
     move $a2, $s4                  # End rows
-    addi $a2, $a2, 1               # Set $a2 to one row below the last row
+    
     jal delete_vertical_segment
     j check_row_neighbors_end
 
@@ -1209,7 +1208,7 @@ delete_vertical_segment:
 
     # Delete the vertical segment by setting pixels to black
 delete_vertical_segment_loop:
-    bgt $a0, $a2, delete_vertical_segment_done  # If we've passed the end row, exit
+    bge $a0, $a2, delete_vertical_segment_done  # Stop if current row > end row
     sw $zero, 0($t6)           # Set pixel to black (0x000000)
     addiu $t6, $t6, 128        # Move to the next row (add 128 bytes)
     addiu $a0, $a0, 1          # Increment row counter
@@ -1218,7 +1217,6 @@ delete_vertical_segment_loop:
 delete_vertical_segment_done:
     # Shift rows above the deleted segment down
     move $t7, $a0              # Current row (start from the deleted row)
-    
 shift_rows_above_loop:
     beqz $t7, shift_rows_above_done  # If we've reached the top row, exit
 
