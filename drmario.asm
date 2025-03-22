@@ -691,18 +691,92 @@ check_pixel:
       jal draw_initial_capsule
       j game_loop
       
-  # Function to erase the pixel (background color)
-  erase_pixel:
-      lw $t0, ADDR_DSPL        # Load base address of display
-      li $t1, 128              # Row offset (128 bytes per row)
-      mul $t2, $a0, $t1        # Row offset = row * 128
-      li $t3, 4                # Each unit is 4 bytes
-      mul $t4, $a1, $t3        # Column offset = column * 4
-      add $t5, $t2, $t4        # Total offset = row offset + column offset
-      addu $t6, $t0, $t5       # Starting address = base address + offset
-      sw $a2, 0($t6)           # Write background color to the location
-      jr $ra
-      
+erase_pixel:
+    # Debug: Print the input parameters
+    # $a0 = row, $a1 = column, $a2 = background color
+    li $v0, 4                  # Syscall for print_string
+    la $a0, debug_message_1     # Load the address of the message
+    syscall
+
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $a0              # Print row
+    syscall
+
+    li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $a1              # Print column
+    syscall
+
+    li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+    
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $a2              # Print background color
+    syscall
+
+        li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+
+    # Compute row offset (128 bytes per row)
+    lw $t0, ADDR_DSPL          # Load base address of display
+    li $t1, 128                # Row offset (128 bytes per row)
+    mul $t2, $a0, $t1          # Row offset = row * 128
+
+    # Debug: Print row offset
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $t2              # Print row offset
+    syscall
+
+        li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+
+    li $t3, 4                  # Each unit is 4 bytes
+    mul $t4, $a1, $t3          # Column offset = column * 4
+
+    # Debug: Print column offset
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $t4              # Print column offset
+    syscall
+
+        li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+
+    add $t5, $t2, $t4          # Total offset = row offset + column offset
+    addu $t6, $t0, $t5         # Starting address = base address + offset
+
+    # Debug: Print total offset and address
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $t5              # Print total offset
+    syscall
+
+    li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+
+    li $v0, 1                  # Syscall for print_int
+    move $a0, $t6              # Print final address
+    syscall
+
+        li $v0, 4                  # Syscall for print_string
+    la $a0, newline_msg     # Load the address of the message
+    syscall
+
+    sw $a2, 0($t6)             # Write background color to the location
+
+    # Debug: Print a message indicating the pixel is erased
+    li $v0, 4                  # Syscall for print_string
+    la $a0, debug_message_2     # Load the address of the message
+    syscall
+
+    jr $ra
+    
   # Function to draw the capsule at the new position
   # Function to erase the capsule
   erase_capsule:
@@ -752,106 +826,74 @@ check_pixel:
       move $a2, $s1            # Color for the second half
       jal draw_pixel
       j game_loop
-
+      
+# Function to check row neighbors and delete contiguous segments if necessary
 check_row_neighbors:
     # Save return address
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
+    #### DEBUGGING FIRST PIXEL ####
     # Check row neighbors for the first pixel
     lw $a0, CAPSULE_ROW_FIRST      # Row for the first pixel
     lw $a1, CAPSULE_COL_FIRST      # Column for the first pixel
     move $a2, $s0                  # Color for the first pixel
     jal check_left_and_right        # Check left and right neighbors for the first pixel
-    
 
-    # If 3 or more same-colored pixels, delete them
+    # Check if the count of same-colored neighbors is greater than or equal to 3
     li $t0, 3
-    bge $s2, $t0, delete_row_pixels     # If count >= 3, delete the pixels
+    bge $s2, $t0, delete_first_segment  # If $s2 >= 3, delete the segment
 
-    # Print the result for the first pixel
-    li $v0, 4
-    la $a0, first_pixel_msg
-    syscall
-
-    li $v0, 1
-    move $a0, $s2                  # Print the count of same-colored neighbors
-    syscall
-
-    li $v0, 4
-    la $a0, newline_msg
-    syscall
-
-    lw $a0, CAPSULE_ROW_FIRST      # Row for the first pixel
-    lw $a1, CAPSULE_COL_FIRST      # Column for the first pixel
-    move $a2, $s0                  # Color for the first pixel
+    # Check top and bottom for the first pixel
+    lw $a0, CAPSULE_ROW_FIRST
+    lw $a1, CAPSULE_COL_FIRST
+    move $a2, $s0
     jal check_bottom_and_top
-    li $t0, 3
-    bge $s2, $t0, delete_column_pixels     # If count >= 3, delete the pixels
 
-    # Print the result for the first pixel
-    li $v0, 4
-    la $a0, col_first_pixel_msg
-    syscall
-
-    li $v0, 1
-    move $a0, $s2                  # Print the count of same-colored neighbors
-    syscall
-
-    li $v0, 4
-    la $a0, newline_msg
-    syscall
-    
+    #### DEBUGGING SECOND PIXEL ####
     # Check row neighbors for the second pixel
-    lw $a0, CAPSULE_ROW_SECOND     # Row for the second pixel
-    lw $a1, CAPSULE_COL_SECOND     # Column for the second pixel
-    move $a2, $s1                  # Color for the second pixel
-    jal check_left_and_right        # Check left and right neighbors for the second pixel
-    
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1
+    jal check_left_and_right
 
-    # If 3 or more same-colored pixels, delete them
+    # Check if the count of same-colored neighbors is greater than or equal to 3
     li $t0, 3
-    bge $s2, $t0, delete_row_pixels     # If count >= 3, delete the pixels
+    bge $s2, $t0, delete_second_segment  # If $s2 >= 3, delete the segment
 
-    # Print the result for the second pixel
-    li $v0, 4
-    la $a0, second_pixel_msg
-    syscall
-
-    li $v0, 1
-    move $a0, $s2                  # Print the count of same-colored neighbors
-    syscall
-
-    li $v0, 4
-    la $a0, newline_msg
-    syscall
-
-    lw $a0, CAPSULE_ROW_SECOND     # Row for the second pixel
-    lw $a1, CAPSULE_COL_SECOND     # Column for the second pixel
-    move $a2, $s1                  # Color for the second pixels
+    # Check top and bottom for the second pixel
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1
     jal check_bottom_and_top
-    li $t0, 3
-    bge $s2, $t0, delete_column_pixels     # If count >= 3, delete the pixels
 
-    # Print the result for the second pixel
-    li $v0, 4
-    la $a0, col_second_pixel_msg
-    syscall
-
-    li $v0, 1
-    move $a0, $s2                  # Print the count of same-colored neighbors
-    syscall
-
-    li $v0, 4
-    la $a0, newline_msg
-    syscall
-
-    
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
 
+delete_first_segment:
+    # Delete the contiguous segment for the first pixel
+    lw $a0, CAPSULE_ROW_FIRST
+    move $a1, $s3                  # Start column
+    move $a2, $s4                  # End column
+    jal delete_contiguous_segment
+    j check_row_neighbors_end
+
+delete_second_segment:
+    # Delete the contiguous segment for the second pixel
+    lw $a0, CAPSULE_ROW_SECOND
+    move $a1, $s3                  # Start column
+    move $a2, $s4                  # End column
+    jal delete_contiguous_segment
+    j check_row_neighbors_end
+
+check_row_neighbors_end:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
 # Function to check left and right neighbors for a single pixel
 # Arguments: $a0 = row, $a1 = column, $a2 = color
 # Returns: $s2 = count of same-colored neighbors in the row
@@ -860,8 +902,10 @@ check_left_and_right:
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
-    # Initialize counter for same-colored pixels
-    li $s2, 0  # Counter for same-colored pixels in the row
+    # Initialize variables
+    li $s2, 1                  # Start with 1 to include the current pixel
+    move $s3, $a1              # Start column = current column
+    move $s4, $a1              # End column = current column
 
     # Save the original column for left checking
     move $t7, $a1
@@ -879,6 +923,7 @@ check_left_and_right:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+    
 
 check_bottom_and_top:
     # Save return address
@@ -886,22 +931,25 @@ check_bottom_and_top:
     sw $ra, 0($sp)
 
     # Initialize counter for same-colored pixels
-    li $s2, 0  # Counter for same-colored pixels in the row
+    li $s2, 1  # Start with 1 to include the current pixel
 
-    # Save the original row for left checking
+    # Save the original row for top checking
     move $t7, $a0
-    # Check to the left
+
+    # Check to the top
     jal check_top_for_pixel
-    # Restore the original column for left checking
+
+    # Restore the original row for bottom checking
     move $a0, $t7
-    # Check to the right
-    jal check_bottom_for_pixel    
+
+    # Check to the bottom
+    jal check_bottom_for_pixel
 
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
-
+    
 # Function to check right neighbors for a single pixel
 # Arguments: $a0 = row, $a1 = column, $a2 = color
 # Returns: $s2 = count of same-colored neighbors to the right
@@ -921,6 +969,9 @@ check_right_loop:
     # Increment the counter
     addi $s2, $s2, 1
 
+    # Update the end column
+    move $s4, $a1
+
     # Continue checking to the right
     j check_right_loop
 
@@ -932,7 +983,7 @@ check_right_done:
 
 # Function to check left neighbors for a single pixel
 # Arguments: $a0 = row, $a1 = column, $a2 = color
-# Returns: $s2 = count of same-colored neighbors to the left
+# Modifies: $s2, $s3
 check_left_for_pixel:
     # Save return address
     addi $sp, $sp, -4
@@ -949,6 +1000,9 @@ check_left_loop:
     # Increment the counter
     addi $s2, $s2, 1
 
+    # Update the start column
+    move $s3, $a1
+
     # Continue checking to the left
     j check_left_loop
 
@@ -957,7 +1011,7 @@ check_left_done:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
-
+    
 check_bottom_for_pixel:
     # Save return address
     addi $sp, $sp, -4
@@ -1008,167 +1062,78 @@ check_top_done:
     addi $sp, $sp, 4
     jr $ra
 
-delete_pixels:
-    # Save return address
-    addi $sp, $sp, -4
-    sw $ra, 0($sp)
-    
-    # Delete the pixels in the row
-    jal delete_row_pixels
-    jal delete_column_pixels
 
-    # Restore return address and return
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4
-    jr $ra
-
-delete_row_pixels:
+# Function to delete a contiguous segment of same-colored pixels in a row and shift pixels above down
+# Arguments: $a0 = row, $a1 = start column, $a2 = end column
+delete_contiguous_segment:
     # Save return address
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
-    # Delete pixels to the right
-    jal delete_right_pixels
+    # Initialize variables
+    lw $t0, ADDR_DSPL          # Base address of display
+    li $t1, 128                # Bytes per row
+    mul $t2, $a0, $t1          # Row offset = row * 128
+    addu $t3, $t0, $t2         # Starting address of the row
 
-    # Delete pixels to the left
-    jal delete_left_pixels
+    # Calculate the starting address of the segment
+    li $t4, 4                  # Bytes per pixel
+    mul $t5, $a1, $t4          # Column offset = start column * 4
+    addu $t6, $t3, $t5         # Starting address of the segment
 
+    # Calculate the ending address of the segment
+    mul $t7, $a2, $t4          # Column offset = end column * 4
+    addu $t8, $t3, $t7         # Ending address of the segment
+
+    # Delete the segment by setting pixels to black
+delete_segment_loop:
+    bgt $t6, $t8, delete_segment_done  # If we've passed the end column, exit
+    sw $zero, 0($t6)           # Set pixel to black (0x000000)
+    addiu $t6, $t6, 4          # Move to the next pixel
+    j delete_segment_loop
+
+delete_segment_done:
+    # Shift pixels above the deleted segment down
+    move $t9, $a1              # Start column
+shift_columns_loop:
+    bgt $t9, $a2, shift_columns_done  # If we've passed the end column, exit
+
+    # Calculate the address of the current column in the deleted row
+    mul $t5, $t9, $t4          # Column offset = column * 4
+    addu $t6, $t3, $t5         # Address of the current column in the deleted row
+
+    # Shift pixels above down
+    move $t7, $a0              # Current row (start from the deleted row)
+shift_rows_loop:
+    beqz $t7, shift_rows_done  # If we've reached the top row, exit
+
+    # Calculate the address of the pixel above
+    subu $t8, $t6, $t1         # Address of the pixel above (row - 1)
+
+    # Copy the pixel above to the current row
+    lw $t5, 0($t8)             # Load pixel from the row above
+    sw $t5, 0($t6)             # Store pixel in the current row
+
+    # Move to the next row above
+    subu $t6, $t6, $t1         # Move to the next row above
+    addiu $t7, $t7, -1         # Decrement row counter
+    j shift_rows_loop
+
+shift_rows_done:
+    # Clear the top row in the current column
+    sw $zero, 0($t6)           # Set the top pixel to black (0x000000)
+
+    # Move to the next column
+    addiu $t9, $t9, 1          # Increment column counter
+    j shift_columns_loop
+
+shift_columns_done:
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
-
-delete_column_pixels:
-    # Save return address
-    addi $sp, $sp, -4
-    sw $ra, 0($sp)
     
-    # Delete pixels to the right
-    jal delete_bottom_pixels
 
-    # Delete pixels to the left
-    jal delete_top_pixels
-
-    # Restore return address and return
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4
-    jr $ra
-
-delete_right_pixels:
-    # Save return address
-    addi $sp, $sp, -12          
-    sw $ra, 0($sp)              
-    sw $a0, 4($sp)              # Save row index
-    sw $a1, 8($sp)              # Save column index
-
-delete_right_loop:
-    # Check the pixel to the right
-    addi $a1, $a1, 1            # Move to the next column to the right
-    jal check_pixel_color       # Check the color of the pixel
-
-    # Compare the color with the capsule color
-    bne $v0, $a2, delete_right_done  # If colors don't match, exit the loop
-
-    # Delete the pixel (set it to black)
-    li $a2, 0x000000            # Background color (black)
-    jal draw_pixel              # Erase the pixel
-
-    # Continue deleting to the right
-    j delete_right_loop
-
-delete_right_done:
-    # Restore return address and return
-    lw $a1, 8($sp)              
-    lw $a0, 4($sp)              
-    lw $ra, 0($sp)
-    addi $sp, $sp, 12
-    jr $ra
-
-delete_left_pixels:
-    addi $sp, $sp, -12
-    sw $ra, 0($sp)
-    sw $a0, 4($sp)
-    sw $a1, 8($sp)
-
-delete_left_loop:
-    # Check the pixel to the left
-    addi $a1, $a1, -1           # Move to the next column to the left
-    jal check_pixel_color       # Check the color of the pixel
-
-    # Compare the color with the capsule color
-    bne $v0, $a2, delete_left_done  # If colors don't match, exit the loop
-
-    # Delete the pixel (set it to black)
-    li $a2, 0x000000            # Background color (black)
-    jal draw_pixel              # Erase the pixel
-
-    # Continue deleting to the left
-    j delete_left_loop
-
-delete_left_done:
-    lw $a1, 8($sp)
-    lw $a0, 4($sp)
-    lw $ra, 0($sp)
-    addi $sp, $sp, 12
-    jr $ra
-
-delete_bottom_pixels:
-    addi $sp, $sp, -12
-    sw $ra, 0($sp)
-    sw $a0, 4($sp)
-    sw $a1, 8($sp)
-
-delete_bottom_loop:
-    # Check the pixel to the right
-    addi $a0, $a0, 1            # Move to the next column to the right
-    jal check_pixel_color       # Check the color of the pixel
-
-    # Compare the color with the capsule color
-    bne $v0, $a2, delete_bottom_done  # If colors don't match, exit the loop
-
-    # Delete the pixel (set it to black)
-    li $a2, 0x000000            # Background color (black)
-    jal draw_pixel              # Erase the pixel
-
-    # Continue deleting to the right
-    j delete_bottom_loop
-
-delete_bottom_done:
-    lw $a1, 8($sp)
-    lw $a0, 4($sp)
-    lw $ra, 0($sp)
-    addi $sp, $sp, 12
-    jr $ra
-
-delete_top_pixels:
-    addi $sp, $sp, -12
-    sw $ra, 0($sp)
-    sw $a0, 4($sp)
-    sw $a1, 8($sp)
-
-
-delete_top_loop:
-    # Check the pixel to the right
-    addi $a0, $a0, -1            # Move to the next column to the right
-    jal check_pixel_color       # Check the color of the pixel
-
-    # Compare the color with the capsule color
-    bne $v0, $a2, delete_top_done  # If colors don't match, exit the loop
-
-    # Delete the pixel (set it to black)
-    li $a2, 0x000000            # Background color (black)
-    jal draw_pixel              # Erase the pixel
-
-    # Continue deleting to the right
-    j delete_top_loop
-
-delete_top_done:
-    lw $a1, 8($sp)
-    lw $a0, 4($sp)
-    lw $ra, 0($sp)
-    addi $sp, $sp, 12
-    jr $ra
-    
 # Function to check the color of a pixel
 # Input: $a0 = row, $a1 = column
 # Output: $v0 = color of the pixel at (row, column)
@@ -1203,3 +1168,16 @@ check_pixel_color:
     second_pixel_msg: .asciiz "Second pixel - Same-colored pixels in the row: "
     col_second_pixel_msg: .asciiz "Second pixel - Same-colored pixels in the column: "
     newline_msg:      .asciiz "\n"
+
+    debug_row_msg: .asciiz "Row: "
+debug_col_msg: .asciiz ", Column: "
+
+debug_deletion_row_msg: .asciiz "Deletion - Row: "
+debug_deletion_col_msg: .asciiz ", Column: "
+debug_address_msg: .asciiz "Calculated address: "
+debug_separator: .asciiz "\n------ Debugging Second Pixel ------\n"
+at_row_msg:     .asciiz " at row "
+column_msg:     .asciiz ", column "
+deletion_msg:   .asciiz "Deleting row of size: "
+debug_message_1: .asciiz "Erasing pixel at row: "
+debug_message_2: .asciiz "Pixel erased successfully!\n"
