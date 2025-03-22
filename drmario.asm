@@ -827,7 +827,7 @@ erase_pixel:
       jal draw_pixel
       j game_loop
       
-# Function to check row neighbors and delete contiguous segments if necessary
+# Function to check row and column neighbors and delete contiguous segments if necessary
 check_row_neighbors:
     # Save return address
     addi $sp, $sp, -4
@@ -841,14 +841,18 @@ check_row_neighbors:
     jal check_left_and_right        # Check left and right neighbors for the first pixel
 
     # Check if the count of same-colored neighbors is greater than or equal to 3
-    li $t0, 3
+    li $t0, 4
     bge $s2, $t0, delete_first_segment  # If $s2 >= 3, delete the segment
 
-    # Check top and bottom for the first pixel
+    # Check vertical neighbors for the first pixel
     lw $a0, CAPSULE_ROW_FIRST
     lw $a1, CAPSULE_COL_FIRST
     move $a2, $s0
     jal check_bottom_and_top
+
+    # Check if the count of same-colored neighbors is greater than or equal to 3
+    li $t0, 3
+    bge $s2, $t0, delete_first_vertical_segment  # If $s2 >= 3, delete the vertical segment
 
     #### DEBUGGING SECOND PIXEL ####
     # Check row neighbors for the second pixel
@@ -861,16 +865,41 @@ check_row_neighbors:
     li $t0, 3
     bge $s2, $t0, delete_second_segment  # If $s2 >= 3, delete the segment
 
-    # Check top and bottom for the second pixel
+    # Check vertical neighbors for the second pixel
     lw $a0, CAPSULE_ROW_SECOND
     lw $a1, CAPSULE_COL_SECOND
     move $a2, $s1
     jal check_bottom_and_top
 
+    # Check if the count of same-colored neighbors is greater than or equal to 3
+    li $t0, 3
+    bge $s2, $t0, delete_second_vertical_segment  # If $s2 >= 3, delete the vertical segment
+
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+
+delete_first_vertical_segment:
+    # Delete the vertical segment for the first pixel
+    lw $a0, CAPSULE_ROW_FIRST      # Start row
+    lw $a1, CAPSULE_COL_FIRST      # Column
+
+    # Calculate the end row (one row below the last row of the segment)
+    move $a2, $s4                  # $s4 contains the last row of the segment
+    addi $a2, $a2, 1               # Set $a2 to one row below the last row
+
+    jal delete_vertical_segment     # Call the function to delete the vertical segment
+    j check_row_neighbors_end       # Jump to the end of the function
+
+delete_second_vertical_segment:
+    # Delete the vertical segment for the second pixel
+    lw $a0, CAPSULE_ROW_SECOND     # Start row
+    lw $a1, CAPSULE_COL_SECOND     # Column
+    move $a2, $s4                  # End rows
+    addi $a2, $a2, 1               # Set $a2 to one row below the last row
+    jal delete_vertical_segment
+    j check_row_neighbors_end
 
 delete_first_segment:
     # Delete the contiguous segment for the first pixel
@@ -925,25 +954,30 @@ check_left_and_right:
     jr $ra
     
 
+# Function to check bottom and top neighbors for a single pixel
+# Arguments: $a0 = row, $a1 = column, $a2 = color
+# Returns: $s2 = count of same-colored neighbors in the column
 check_bottom_and_top:
     # Save return address
     addi $sp, $sp, -4
     sw $ra, 0($sp)
 
     # Initialize counter for same-colored pixels
-    li $s2, 1  # Start with 1 to include the current pixel
+    li $s2, 1                  # Start with 1 to include the current pixel
+    move $s3, $a0              # Start row = current row
+    move $s4, $a0              # End row = current row
 
     # Save the original row for top checking
     move $t7, $a0
 
-    # Check to the top
-    jal check_top_for_pixel
+    # Check below
+    jal check_bottom_for_pixel
 
-    # Restore the original row for bottom checking
+    # Restore the original row for top checking
     move $a0, $t7
 
-    # Check to the bottom
-    jal check_bottom_for_pixel
+    # Check above
+    jal check_top_for_pixel
 
     # Restore return address and return
     lw $ra, 0($sp)
@@ -1018,9 +1052,9 @@ check_bottom_for_pixel:
     sw $ra, 0($sp)
 
 check_bottom_loop:
-    # Check the pixel to the right
-    addi $a0, $a0, 1            # Move to the next column to the right
-    jal check_pixel_color       # Check the color of the pixel
+    # Check the pixel below
+    addi $a0, $a0, 1            # Move to the next row below
+    jal check_pixel_color        # Check the color of the pixel
 
     # Compare the color with the capsule color
     bne $v0, $a2, check_bottom_done  # If colors don't match, exit the loop
@@ -1028,7 +1062,10 @@ check_bottom_loop:
     # Increment the counter
     addi $s2, $s2, 1
 
-    # Continue checking to the right
+    # Update the end row
+    move $s4, $a0              # Update $s4 to the current row
+
+    # Continue checking below
     j check_bottom_loop
 
 check_bottom_done:
@@ -1036,6 +1073,7 @@ check_bottom_done:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+    
     
 check_top_for_pixel:
     # Save return address
@@ -1152,7 +1190,64 @@ check_pixel_color:
     # Load the color of the pixel
     lw $v0, 0($t6)            # Load the color of the pixel
     jr $ra                    # Return the color in $v0
-      
+
+  # Function to delete a contiguous vertical segment of same-colored pixels and shift rows above down
+# Arguments: $a0 = row (start of the vertical segment), $a1 = column, $a2 = end row (end of the vertical segment)
+delete_vertical_segment:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables
+    lw $t0, ADDR_DSPL          # Base address of display
+    li $t1, 128                # Bytes per row
+    mul $t2, $a0, $t1          # Row offset = row * 128
+    li $t3, 4                  # Bytes per pixel
+    mul $t4, $a1, $t3          # Column offset = column * 4
+    addu $t5, $t2, $t4         # Starting address of the segment
+    addu $t6, $t0, $t5         # Starting address of the segment in display
+
+    # Delete the vertical segment by setting pixels to black
+delete_vertical_segment_loop:
+    bgt $a0, $a2, delete_vertical_segment_done  # If we've passed the end row, exit
+    sw $zero, 0($t6)           # Set pixel to black (0x000000)
+    addiu $t6, $t6, 128        # Move to the next row (add 128 bytes)
+    addiu $a0, $a0, 1          # Increment row counter
+    j delete_vertical_segment_loop
+
+delete_vertical_segment_done:
+    # Shift rows above the deleted segment down
+    move $t7, $a0              # Current row (start from the deleted row)
+    
+shift_rows_above_loop:
+    beqz $t7, shift_rows_above_done  # If we've reached the top row, exit
+
+    # Calculate the address of the pixel above
+    subu $t8, $t6, $t1         # Address of the pixel above (row - 1)
+
+    # Check if the pixel below is black (collision check)
+    addiu $t9, $t6, 128        # Address of the pixel below (row + 1)
+    lw $t5, 0($t9)             # Load pixel from the row below
+    bne $t5, 0x000000, shift_rows_above_done  # If pixel below is not black, stop shifting
+
+    # Copy the pixel above to the current row
+    lw $t5, 0($t8)             # Load pixel from the row above
+    sw $t5, 0($t6)             # Store pixel in the current row
+
+    # Move to the next row above
+    subu $t6, $t6, $t1         # Move to the next row above
+    addiu $t7, $t7, -1         # Decrement row counter
+    j shift_rows_above_loop
+
+shift_rows_above_done:
+    # Clear the top row in the current column
+    sw $zero, 0($t6)           # Set the top pixel to black (0x000000)
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
   
   .data
       moving_left:   .asciiz "moving left\n"
