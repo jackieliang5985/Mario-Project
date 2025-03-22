@@ -1218,29 +1218,50 @@ delete_vertical_segment_done:
     # Shift rows above the deleted segment down
     move $t7, $a0              # Current row (start from the deleted row)
 shift_rows_above_loop:
-    beqz $t7, shift_rows_above_done  # If we've reached the top row, exit
+    bltz $t7, shift_rows_above_done  # If we've reached the top row, exit
 
-    # Calculate the address of the pixel above
-    subu $t8, $t6, $t1         # Address of the pixel above (row - 1)
+    # Calculate the address of the current pixel in the column
+    mul $t2, $t7, $t1          # Row offset = row * 128
+    addu $t5, $t2, $t4         # Address offset for current pixel
+    addu $t6, $t0, $t5         # Address of current pixel in display
 
-    # Check if the pixel below is black (collision check)
-    addiu $t9, $t6, 128        # Address of the pixel below (row + 1)
-    lw $t5, 0($t9)             # Load pixel from the row below
-    bne $t5, 0x000000, shift_rows_above_done  # If pixel below is not black, stop shifting
+    # Check if the current pixel is gray (outline/wall)
+    lw $t5, 0($t6)             # Load pixel color
+    beq $t5, $t9, skip_shift   # If pixel is gray, skip shifting
 
-    # Copy the pixel above to the current row
-    lw $t5, 0($t8)             # Load pixel from the row above
-    sw $t5, 0($t6)             # Store pixel in the current row
+    # Find the first non-black pixel below the current row
+    move $t8, $t7              # Start searching from the current row
+find_collision_loop:
+    addiu $t8, $t8, 1          # Move to the row below
+    bgt $t8, 26, found_collision  # If we reach the bottom, stop
+    mul $t2, $t8, $t1          # Row offset = row * 128
+    addu $t2, $t2, $t4         # Address offset for pixel below
+    addu $t2, $t0, $t2         # Address of pixel below in display
+    lw $t5, 0($t2)             # Load pixel from the row below
+    beqz $t5, find_collision_loop  # If pixel below is black, continue searching
 
+found_collision:
+    # Check if the collision pixel is gray (outline/wall)
+    lw $t5, 0($t2)             # Load pixel color
+    beq $t5, $t9, skip_shift   # If collision pixel is gray, skip shifting
+
+    # Copy the current pixel to the row just above the collision
+    addiu $t8, $t8, -1         # Move back to the row above the collision
+    mul $t2, $t8, $t1          # Row offset = row * 128
+    addu $t2, $t2, $t4         # Address offset for pixel below
+    addu $t2, $t0, $t2         # Address of pixel below in display
+    lw $t5, 0($t6)             # Load pixel from the current row
+    sw $t5, 0($t2)             # Store pixel in the row above the collision
+
+    # Clear the current pixel (since it has been moved down)
+    sw $zero, 0($t6)           # Set current pixel to black (0x000000)
+
+skip_shift:
     # Move to the next row above
-    subu $t6, $t6, $t1         # Move to the next row above
-    addiu $t7, $t7, -1         # Decrement row counter
+    addiu $t7, $t7, -1         # Move to the row above
     j shift_rows_above_loop
 
 shift_rows_above_done:
-    # Clear the top row in the current column
-    sw $zero, 0($t6)           # Set the top pixel to black (0x000000)
-
     # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
