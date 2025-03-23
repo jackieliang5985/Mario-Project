@@ -386,6 +386,12 @@ check_pixel:
       j rotate_right_to_top
   
   rotate_left_to_bottom:
+      lw $a0, CAPSULE_ROW_FIRST
+      addi $a0, $a0, 1
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a1, $a1, 1
+      jal check_pixel
+      beq $v0, 0, no_rotate
       lw $a0, CAPSULE_ROW_FIRST      # Load current row
       lw $a1, CAPSULE_COL_FIRST      # Load current column
       li $a2, 0x000000         # Background color (black)
@@ -409,6 +415,12 @@ check_pixel:
       j game_loop
   
   rotate_right_to_top:
+      lw $a0, CAPSULE_ROW_FIRST
+      addi $a0, $a0, -1
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a1, $a1, -1
+      jal check_pixel
+      beq $v0, 0, no_rotate
       lw $a0, CAPSULE_ROW_FIRST      # Load current row
       lw $a1, CAPSULE_COL_FIRST      # Load current column
       li $a2, 0x000000         # Background color (black)
@@ -439,6 +451,12 @@ check_pixel:
   
   rotate_top_to_left:
       beq $t1, 8, no_rotate
+      lw $a0, CAPSULE_ROW_FIRST
+      addi $a0, $a0, 1
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a1, $a1, -1
+      jal check_pixel
+      beq $v0, 0, no_rotate
       lw $a0, CAPSULE_ROW_FIRST      # Load current row
       lw $a1, CAPSULE_COL_FIRST      # Load current column
       li $a2, 0x000000         # Background color (black)
@@ -463,6 +481,12 @@ check_pixel:
   
   rotate_bottom_to_right:
       beq $t1, 22, no_rotate
+      lw $a0, CAPSULE_ROW_FIRST
+      addi $a0, $a0, -1
+      lw $a1, CAPSULE_COL_FIRST
+      addi $a1, $a1, 1
+      jal check_pixel
+      beq $v0, 0, no_rotate
       lw $a0, CAPSULE_ROW_FIRST      # Load current row
       lw $a1, CAPSULE_COL_FIRST      # Load current column
       li $a2, 0x000000         # Background color (black)
