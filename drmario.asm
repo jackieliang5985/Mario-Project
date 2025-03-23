@@ -1169,7 +1169,9 @@ shift_columns_done:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
-    
+
+
+
 
 # Function to check the color of a pixel
 # Input: $a0 = row, $a1 = column
@@ -1219,6 +1221,9 @@ delete_vertical_segment_done:
     move $t7, $a0              # Current row (start from the deleted row)
 shift_rows_above_loop:
     bltz $t7, shift_rows_above_done  # If we've reached the top row, exit
+    li $t9, 9                  # Row 9
+    beq $t7, $t9, check_gray_at_row_9  # If current row is 9, check if pixel is gray
+
 
     # Calculate the address of the current pixel in the column
     mul $t2, $t7, $t1          # Row offset = row * 128
@@ -1267,7 +1272,19 @@ shift_rows_above_done:
     addi $sp, $sp, 4
     jr $ra
     
-  
+check_gray_at_row_9:
+    # Calculate the address of the pixel at row 9
+    mul $t2, $t9, $t1          # Row offset = row 9 * 128
+    addu $t5, $t2, $t4         # Address offset for pixel at row 9
+    addu $t6, $t0, $t5         # Address of pixel at row 9 in display
+
+    # Check if the pixel at row 9 is gray
+    lw $t5, 0($t6)             # Load pixel color
+    li $t9, 0x808080           # Gray color
+    beq $t5, $t9, shift_rows_above_done  # If pixel is gray, exit the loop
+
+    # If not gray, continue shifting
+    j shift_rows_above_done    
   .data
       moving_left:   .asciiz "moving left\n"
       moving_right:  .asciiz "moving right\n"
@@ -1295,3 +1312,4 @@ column_msg:     .asciiz ", column "
 deletion_msg:   .asciiz "Deleting row of size: "
 debug_message_1: .asciiz "Erasing pixel at row: "
 debug_message_2: .asciiz "Pixel erased successfully!\n"
+dumbass: .asciiz "dumb"
