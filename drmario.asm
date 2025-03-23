@@ -20,6 +20,9 @@
   CAPSULE_ROW_SECOND: .word 8         # Row for the capsule (middle of the gap)
   CAPSULE_COL_SECOND: .word 15        # Column for the capsule (middle of the gap)
 
+  VIRUS_ROW: .word 14
+  VIRUS_COLUMN: .word 16
+
   # Initial capsule positions (middle of the gap)
   CAPSULE_ROW_FIRST_INITIAL:  .word 7         # Initial row for the first part
   CAPSULE_COL_FIRST_INITIAL:  .word 15        # Initial column for the first part
@@ -106,10 +109,11 @@
       
       jal get_random_location
       move $a1, $v0
-
+      lw $a1, VIRUS_COLUMN
 
       jal get_random_location
       move $a0, $v0            # Color for the first half
+      lw $a0, VIRUS_ROW
       
       jal draw_pixel             # Draw the first halfs
       
