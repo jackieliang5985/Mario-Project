@@ -1149,8 +1149,10 @@ shift_rows_loop:
 
     # Copy the pixel above to the current row
     lw $t5, 0($t8)             # Load pixel from the row above
+    li $t0, 0x000000            # Assume grey blocks are 0x808080 (adjust as needed)
+    beq $t5, $t0, shift_rows_done  # If grey block, stop shifting
     sw $t5, 0($t6)             # Store pixel in the current row
-
+    
     # Move to the next row above
     subu $t6, $t6, $t1         # Move to the next row above
     addiu $t7, $t7, -1         # Decrement row counter
