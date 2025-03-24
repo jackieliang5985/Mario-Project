@@ -43,6 +43,7 @@
 
   VIRUS_ROW: .word 14
   VIRUS_COLUMN: .word 16
+  VIRUS_COUNT: .word 1
 
   # Initial capsule positions (middle of the gap)
   CAPSULE_ROW_FIRST_INITIAL:  .word 7         # Initial row for the first part
@@ -503,20 +504,28 @@ check_if_virus:
     lw $t1, VIRUS_COLUMN       # Load virus column
 
     # Compare input row and column with virus location
-    
     bne $a0, $t0, not_virus    # If row doesn't match, not a virus
     bne $a1, $t1, not_virus    # If column doesn't match, not a virus
-        li $v0, 4                  # Syscall for print_string
-    la $a0, virus_found     # Load the address of the message
-    syscall
-
-    # If both row and column match, it's a virus
+    
+    # Virus found - return 1
     li $v0, 1                  # Return 1 (is a virus)
     jr $ra                     # Return
+
 
 not_virus:
     li $v0, 0                  # Return 0 (not a virus)
     jr $ra                     # Return
+
+decrease_virus_count:
+    # Decrement virus count and check if game should end
+    lw $t0, VIRUS_COUNT
+    addi $t0, $t0, -1
+    sw $t0, VIRUS_COUNT
+    
+    # If count reaches 0, quit game
+    beqz $t0, quit
+    
+    jr $ra                     # Return if count > 0
     
     # Function to check capsule orientation
   # Returns: $v0 = 0 if vertical, 1 if horizontal
@@ -1473,75 +1482,79 @@ delete_vertical_segment:
     # Initialize variables
     lw $t0, ADDR_DSPL          # Base address of display
     li $t1, 128                # Bytes per row
-    mul $t2, $a0, $t1          # Row offset = row * 128
     li $t3, 4                  # Bytes per pixel
     mul $t4, $a1, $t3          # Column offset = column * 4
-    addu $t5, $t2, $t4         # Starting address of the segment
-    addu $t6, $t0, $t5         # Starting address of the segment in display
-
-    # Delete the vertical segment by setting pixels to black
+    
+    # First, delete the vertical segment
+    move $t7, $a0              # Start row
+    mul $t2, $t7, $t1          # Row offset
+    addu $t6, $t0, $t2         # Row address
+    addu $t6, $t6, $t4         # Pixel address
+    
 delete_vertical_segment_loop:
-    # j check_left_and_right_2
-    bge $a0, $a2, delete_vertical_segment_done  # Stop if current row > end row
-    sw $zero, 0($t6)           # Set pixel to black (0x000000)
-    addiu $t6, $t6, 128        # Move to the next row (add 128 bytes)
-    addiu $a0, $a0, 1          # Increment row counter
+    bgt $t7, $a2, deletion_done  # Stop if current row > end row
+    sw $zero, 0($t6)           # Set pixel to black
+    addiu $t6, $t6, 128        # Next row
+    addiu $t7, $t7, 1          # Increment row
     j delete_vertical_segment_loop
 
-delete_vertical_segment_done:
-    # Shift rows above the deleted segment down
-    move $t7, $a0              # Current row (start from the deleted row)
+deletion_done:
+    # Now shift all pixels above the deleted segment down
+    # Start from the row above the top of the deleted segment
+    addi $t7, $a0, -1          # Start at row above deletion
+    
 shift_rows_above_loop:
     bltz $t7, shift_rows_above_done  # If we've reached the top row, exit
-    li $t9, 9                  # Row 9
-    beq $t7, $t9, check_gray_at_row_9  # If current row is 9, check if pixel is gray
+    li $t5, 9                  # Row 9 - always stop here
+    ble $t7, $t5, shift_rows_above_done  # Stop if we reach row 9 or below
+    
+    # Calculate current pixel address
+    mul $t2, $t7, $t1          # Row offset
+    addu $t6, $t0, $t2         # Row address
+    addu $t6, $t6, $t4         # Pixel address
+    
+    # Check if pixel is gray (wall)
+    lw $t5, 0($t6)
+    li $t9, 0x808080           # Gray color
+    beq $t5, $t9, shift_rows_above_done   # Skip gray pixels
+
     lw $t9, VIRUS_ROW
     beq $t7, $t9, check_if_virus
     beq $v0, 1, shift_rows_above_done
-
-    # Calculate the address of the current pixel in the column
-    mul $t2, $t7, $t1          # Row offset = row * 128
-    addu $t5, $t2, $t4         # Address offset for current pixel
-    addu $t6, $t0, $t5         # Address of current pixel in display
-
-    # Check if the current pixel is gray (outline/wall)
-    lw $t5, 0($t6)             # Load pixel color
-    beq $t5, $t9, skip_shift   # If pixel is gray, skip shifting
-
-    # Find the first non-black pixel below the current row
-    move $t8, $t7              # Start searching from the current row
-find_collision_loop:
-    addiu $t8, $t8, 1          # Move to the row below
-    bgt $t8, 26, found_collision  # If we reach the bottom, stop
-    mul $t2, $t8, $t1          # Row offset = row * 128
-    addu $t2, $t2, $t4         # Address offset for pixel below
-    addu $t2, $t0, $t2         # Address of pixel below in display
-    lw $t5, 0($t2)             # Load pixel from the row below
-    beqz $t5, find_collision_loop  # If pixel below is black, continue searching
-
-found_collision:
-    # Check if the collision pixel is gray (outline/wall)
-    lw $t5, 0($t2)             # Load pixel color
-    beq $t5, $t9, skip_shift   # If collision pixel is gray, skip shifting
-
-    # Copy the current pixel to the row just above the collision
-    addiu $t8, $t8, -1         # Move back to the row above the collision
-    mul $t2, $t8, $t1          # Row offset = row * 128
-    addu $t2, $t2, $t4         # Address offset for pixel below
-    addu $t2, $t0, $t2         # Address of pixel below in display
-    lw $t5, 0($t6)             # Load pixel from the current row
-    sw $t5, 0($t2)             # Store pixel in the row above the collision
-
-    # Clear the current pixel (since it has been moved down)
-    sw $zero, 0($t6)           # Set current pixel to black (0x000000)
-
+    
+    # Find the lowest empty space below this pixel
+    move $t8, $t7              # Current row
+find_empty_space_loop:
+    addiu $t8, $t8, 1          # Next row down
+    bgt $t8, 26, found_space   # If at bottom, use this
+    
+    # Calculate address of pixel below
+    mul $t2, $t8, $t1
+    addu $t2, $t0, $t2
+    addu $t2, $t2, $t4
+    lw $t5, 0($t2)             # Load pixel below
+    
+    # If pixel below is not black, we found the space above it
+    bnez $t5, found_space
+    j find_empty_space_loop
+    
+found_space:
+    addiu $t8, $t8, -1         # Row above the collision
+    blt $t8, $t7, skip_shift   # If no space found, skip
+    
+    # Move the pixel down to the empty space
+    lw $t5, 0($t6)             # Load current pixel
+    mul $t2, $t8, $t1          # Calculate target address
+    addu $t2, $t0, $t2
+    addu $t2, $t2, $t4
+    sw $t5, 0($t2)             # Store pixel in new position
+    sw $zero, 0($t6)           # Clear original position
+    
 skip_shift:
-    # Move to the next row above
-    addiu $t7, $t7, -1         # Move to the row above
+    addiu $t7, $t7, -1         # Move up one row
     j shift_rows_above_loop
 
 shift_rows_above_done:
-    # Restore return address and return
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
