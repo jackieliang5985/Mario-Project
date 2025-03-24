@@ -176,13 +176,14 @@
       beq $t2, $t6, move_down  # If 's' is pressed, move down
       beq $t2, $t7, rotate  # If 's' is pressed, move down
       beq $t2, $t8, quit       # if 'q' is pressed, quit
+
       j game_loop
   
   
   no_input:
       # 5. Sleep for approximately 16 ms (60 FPS)
-      # jal sleep
-      # j move_down
+      jal sleep
+      j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -193,7 +194,7 @@
       li $v0, 4                # Syscall for printing a string
       la $a0, sleeping_msg     # Load address of the string
       syscall
-  
+      
       # Sleep for 16 ms
       li $v0, 32               # Syscall for sleep
       li $a0, 60               # Sleep for 200 ms (approximately 60 FPS)
@@ -476,7 +477,30 @@ check_pixel:
   pixel_is_black:
       li $v0, 1                 # Pixel is black
       jr $ra
-  
+# Function to check if a pixel is a virus
+# Input: $a0 = row, $a1 = column
+# Output: $v0 = 1 if pixel is a virus, 0 otherwise
+# check_if_virus:
+#     # Load virus location
+#     lw $t0, VIRUS_ROW          # Load virus row
+#     lw $t1, VIRUS_COLUMN       # Load virus column
+
+#     # Compare input row and column with virus location
+    
+#     bne $a0, $t0, not_virus    # If row doesn't match, not a virus
+#     bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+#         li $v0, 4                  # Syscall for print_string
+#     la $a0, virus_found     # Load the address of the message
+#     syscall
+
+#     # If both row and column match, it's a virus
+#     li $v0, 1                  # Return 1 (is a virus)
+#     jr $ra                     # Return
+
+# not_virus:
+#     li $v0, 0                  # Return 0 (not a virus)
+#     jr $ra                     # Return
+    
     # Function to check capsule orientation
   # Returns: $v0 = 0 if vertical, 1 if horizontal
   check_orientation:
@@ -762,6 +786,52 @@ check_pixel:
     # Exit the program
       li $v0, 10               # Syscall for exit
       syscall
+
+check_row_9_covered:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables
+    lw $t0, ADDR_DSPL          # Base address of display
+    li $t1, 128                # Bytes per row
+    li $t2, 8                  # Row 9
+    mul $t3, $t2, $t1          # Row offset = row * 128
+    addu $t4, $t0, $t3         # Starting address of Row 9
+
+    li $t5, 14                 # Column counter (start at 13)
+    li $t6, 16                 # Total columns (end at 17)
+    li $t7, 4                  # Bytes per pixel
+
+check_row_9_loop:
+    bge $t5, $t6, row_9_covered  # If all columns checked and no black pixels found, row is covered
+
+    # Calculate the address of the current pixel
+    mul $t8, $t5, $t7          # Column offset = column * 4
+    addu $t9, $t4, $t8         # Address of the current pixel
+
+    # Load the color of the current pixel
+    lw $t8, 0($t9)             # Load pixel color
+    li $t9, 0x000000           # Black color
+    beq $t8, $t9, row_9_not_covered  # If pixel is black, row is not covered
+
+    # Move to the next column
+    addi $t5, $t5, 1           # Increment column counter
+    j check_row_9_loop
+
+row_9_covered:
+    li $v0, 1                  # Return 1 (Row 9 is fully covered)
+    j check_row_9_done
+
+row_9_not_covered:
+    li $v0, 0                  # Return 0 (Row 9 is not fully covered)
+
+check_row_9_done:
+    # Restore return address
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
   
   # Function to move the capsule down
   move_down:
@@ -842,6 +912,10 @@ check_pixel:
       jal draw_pixel
 
       jal check_row_neighbors
+
+      jal check_row_9_covered
+      beq $v0, 1, quit    # If Row 9 is not covered, continue the game
+      
   
       # Reset capsule position to the initial position (middle of the gap)
       lw $t0, CAPSULE_ROW_FIRST_INITIAL  # Load initial row for the first part
@@ -1308,6 +1382,7 @@ shift_columns_loop:
 
     # Shift pixels above down
     move $t7, $a0              # Current row (start from the deleted row)
+    
 shift_rows_loop:
     beqz $t7, shift_rows_done  # If we've reached the top row, exit
 
@@ -1316,10 +1391,19 @@ shift_rows_loop:
 
     # Copy the pixel above to the current row
     lw $t5, 0($t8)             # Load pixel from the row above
-    li $t0, 0x000000            # Assume grey blocks are 0x808080 (adjust as needed)
-    beq $t5, $t0, shift_rows_done  # If grey block, stop shifting
+    li $t0, 0x000000           # Assume black blocks are 0x000000
+    beq $t5, $t0, shift_rows_done  # If black block, stop shifting
+
+    # # Check if the pixel above is a virus
+    # move $a0, $t7              # Current row
+    # addi $a0, $a0, -1          # Row of the pixel above
+    # move $a1, $t9              # Column of the pixel above
+    # jal check_if_virus         # Check if it's a virus
+    # bnez $v0, shift_rows_done  # If it's a virus, stop shifting
+
+    # Copy the pixel above to the current row
     sw $t5, 0($t6)             # Store pixel in the current row
-    
+
     # Move to the next row above
     subu $t6, $t6, $t1         # Move to the next row above
     addiu $t7, $t7, -1         # Decrement row counter
@@ -1552,3 +1636,4 @@ deletion_msg:   .asciiz "Deleting row of size: "
 debug_message_1: .asciiz "Erasing pixel at row: "
 debug_message_2: .asciiz "Pixel erased successfully!\n"
 dumbass: .asciiz "dumb"
+virus_found: .asciiz "virus Found"
