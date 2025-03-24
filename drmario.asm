@@ -41,8 +41,14 @@
   CAPSULE_ROW_SECOND: .word 8         # Row for the capsule (middle of the gap)
   CAPSULE_COL_SECOND: .word 15        # Column for the capsule (middle of the gap)
 
-  VIRUS_ROW: .word 14
-  VIRUS_COLUMN: .word 16
+  VIRUS_ROW_FIRST: .word 14
+  VIRUS_COLUMN_FIRST: .word 16
+  VIRUS_ROW_SECOND: .word 14
+  VIRUS_COLUMN_SECOND: .word 16
+  VIRUS_ROW_THIRD: .word 14
+  VIRUS_COLUMN_THIRD: .word 16
+  VIRUS_ROW_FOURTH: .word 14
+  VIRUS_COLUMN_FOURTH: .word 16
   VIRUS_COUNT: .word 1
 
   # Initial capsule positions (middle of the gap)
@@ -148,19 +154,72 @@
       lw $a2, COLOR_EXTRA_BLUE
       jal draw_pixel
 
+      # Virus generation 1
       jal get_random_color       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       
-      
-      jal get_random_location
+      jal get_random_location_column
       move $a1, $v0
-      lw $a1, VIRUS_COLUMN
+      sw $a1, VIRUS_COLUMN_FIRST
 
-      jal get_random_location
-      move $a0, $v0            # Color for the first half
-      lw $a0, VIRUS_ROW
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_FIRST
+
+      lw $a1, VIRUS_COLUMN_FIRST
       
-      jal draw_pixel             # Draw the first halfs
+      jal draw_pixel             # Drawing the virus
+      
+      
+      # Virus generation 2
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_SECOND
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_SECOND
+
+      lw $a1, VIRUS_COLUMN_SECOND
+      
+      jal draw_pixel             # Drawing the virus
+
+      
+      # Virus generation 3
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_THIRD
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_THIRD
+
+      lw $a1, VIRUS_COLUMN_THIRD
+      
+      jal draw_pixel             # Drawing the virus
+
+
+      # Virus generation 4
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_FOURTH
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_FOURTH
+
+      lw $a1, VIRUS_COLUMN_FOURTH
+      
+      jal draw_pixel             # Drawing the virus
       
       # Draw the initial capsule in the middle of the gap
       jal draw_initial_capsule
@@ -311,7 +370,28 @@
       lw $v0, 0($t2)            # Load blue color
       jr $ra
 
+get_random_location_row:
+      # Generate a random number between 0 and 2
+      li $v0, 42                # Syscall for random number
+      li $a0, 0                 # Random number generator ID
+      li $a1, 11                 # Upper bound (exclusive)
+      syscall
+      addi $a0, $a0, 11
+      move $v0, $a0
+      jr $ra
 
+
+  get_random_location_column:
+      # Generate a random number between 0 and 2
+      li $v0, 42                # Syscall for random number
+      li $a0, 0                 # Random number generator ID
+      li $a1, 14                 # Upper bound (exclusive)
+      syscall
+      addi $a0, $a0, 8
+      move $v0, $a0
+      jr $ra
+
+  
   get_random_location:
       # Generate a random number between 0 and 2
       li $v0, 42                # Syscall for random number
@@ -500,8 +580,29 @@ check_pixel:
 # Output: $v0 = 1 if pixel is a virus, 0 otherwise
 check_if_virus:
     # Load virus location
-    lw $t0, VIRUS_ROW          # Load virus row
-    lw $t1, VIRUS_COLUMN       # Load virus column
+    lw $t0, VIRUS_ROW_FIRST          # Load virus row
+    lw $t1, VIRUS_COLUMN_FIRST       # Load virus column
+
+    # Compare input row and column with virus location
+    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
+    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+
+    lw $t0, VIRUS_ROW_SECOND          # Load virus row
+    lw $t1, VIRUS_COLUMN_SECOND      # Load virus column
+
+    # Compare input row and column with virus location
+    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
+    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+
+    lw $t0, VIRUS_ROW_THIRD          # Load virus row
+    lw $t1, VIRUS_COLUMN_THIRD       # Load virus column
+
+    # Compare input row and column with virus location
+    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
+    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+
+    lw $t0, VIRUS_ROW_FOURTH          # Load virus row
+    lw $t1, VIRUS_COLUMN_FOURTH       # Load virus column
 
     # Compare input row and column with virus location
     bne $a0, $t0, not_virus    # If row doesn't match, not a virus
@@ -1518,7 +1619,19 @@ shift_rows_above_loop:
     li $t9, 0x808080           # Gray color
     beq $t5, $t9, shift_rows_above_done   # Skip gray pixels
 
-    lw $t9, VIRUS_ROW
+    lw $t9, VIRUS_ROW_FIRST
+    beq $t7, $t9, check_if_virus
+    beq $v0, 1, shift_rows_above_done
+
+    lw $t9, VIRUS_ROW_SECOND
+    beq $t7, $t9, check_if_virus
+    beq $v0, 1, shift_rows_above_done
+
+    lw $t9, VIRUS_ROW_THIRD
+    beq $t7, $t9, check_if_virus
+    beq $v0, 1, shift_rows_above_done
+
+    lw $t9, VIRUS_ROW_FOURTH
     beq $t7, $t9, check_if_virus
     beq $v0, 1, shift_rows_above_done
     
@@ -1571,7 +1684,8 @@ check_gray_at_row_9:
     beq $t5, $t9, shift_rows_above_done  # If pixel is gray, exit the loop
 
     # If not gray, continue shifting
-    j shift_rows_above_done    
+    j shift_rows_above_done
+    
 
 # check_left_and_right_2:
 #     # Initialize variables
