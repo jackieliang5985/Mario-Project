@@ -13,7 +13,11 @@
   COLOR_RED:    .word 0xff0000  # Red
   COLOR_GREEN:  .word 0x00ff00  # Green
   COLOR_BLUE:   .word 0x0000ff  # Blue
-  
+  COLOR_BLUER:  .word 0x90d5df
+  COLOR_EXTRA_BLUE: .word 0x00bfff
+  COLOR_WHITE:  .word 0xFFFFFF  # White
+  COLOR_BLACK:  .word 0x000000  # Black
+
   # Capsule position (middle of the gap)
   CAPSULE_ROW_FIRST:  .word 7         # Row for the capsule (middle of the gap)
   CAPSULE_COL_FIRST:  .word 15        # Column for the capsule (middle of the gap)
@@ -72,36 +76,59 @@
       # Draw the top horizontal line with a 4-pixel gap in the middle
       li $a0, 9                 # Start at row 9
       li $a1, 8                 # Start at column 9
-      li $a2, 11                # End column for the left part (12)
+      li $a2, 12                # End column for the left part (13)
       jal draw_horizontal_line
   
       # Draw the right part of the top horizontal line
       li $a0, 9                 # Start at row 9
-      li $a1, 19                # Start at column 19
+      li $a1, 18                # Start at column 19
       li $a2, 22                # End at column 22
       jal draw_horizontal_line
   
       # Draw the 2 vertical lines that are protruding out of the gap
       li $a0, 7                 # Start at row 7
-      li $a1, 12                # Start at column 13
+      li $a1, 13                # Start at column 14
       li $a2, 2                 # Height of the vertical line (2 pixels)
       jal draw_vertical_line
   
       li $a0, 7                 # Start at row 7
-      li $a1, 18                # Start at column 18
+      li $a1, 17                # Start at column 18
       li $a2, 2                 # Height of the vertical line (2 pixels)
       jal draw_vertical_line
   
       # Draw additional vertical lines for the design
       li $a0, 5                 # Start at row 5
-      li $a1, 11                # Start at column 12
+      li $a1, 12                # Start at column 13
       li $a2, 2                 # Height of the vertical line (2 pixels)
       jal draw_vertical_line
   
       li $a0, 5                 # Start at row 5
-      li $a1, 19                # Start at column 19
+      li $a1, 18                # Start at column 18
       li $a2, 2                 # Height of the vertical line (2 pixels)
       jal draw_vertical_line
+
+
+      jal draw_checkered_pattern
+
+      li $a0, 26                 # Start at row 9
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_EXTRA_BLUE
+      jal draw_pixel
+
+      li $a0, 26                 # Start at row 9
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_EXTRA_BLUE
+      jal draw_pixel
+
+      li $a0, 26                 # Start at row 9
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_EXTRA_BLUE
+      jal draw_pixel
+
+      li $a0, 26                 # Start at row 9
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_EXTRA_BLUE
+      jal draw_pixel
 
       jal get_random_color       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
@@ -304,7 +331,119 @@
   select_nine:
       li $v0, 20            # Load blue color
       jr $ra
-  
+
+# Function to draw a checkered pattern
+draw_checkered_pattern:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables
+    li $t0, 0                  # Row counter
+    li $t1, 0                  # Column counter
+    lw $t2, ADDR_DSPL          # Base address of display
+    lw $t3, COLOR_EXTRA_BLUE        # Load white color
+    lw $t4, COLOR_BLACK        # Load black color
+    li $t5, 0x808080           # Gray color (outline)
+    li $t6, 0                  # Inside flag (0 = checkered, 1 = skip)
+
+draw_checkered_outer_loop:
+    bge $t0, 32, draw_checkered_done  # If row >= 32, exit loop
+
+draw_checkered_inner_loop:
+    bge $t1, 32, draw_checkered_next_row  # If column >= 32, move to next row
+
+    # Calculate the address of the current pixel
+    li $t7, 128                # Bytes per row
+    mul $t8, $t0, $t7          # Row offset = row * 128
+    li $t9, 4                  # Bytes per pixel
+    mul $t7, $t1, $t9          # Column offset = column * 4
+    add $t8, $t8, $t7          # Total offset = row offset + column offset
+    addu $t8, $t2, $t8         # Address of the current pixel
+
+    # Load the color of the current pixel
+    lw $t7, 0($t8)             # Load pixel color
+
+    # If we see a gray pixel, toggle the inside flag
+    beq $t7, $t5, toggle_inside_flag  
+
+    # If inside the black region, skip drawing checkered pixels
+    bnez $t6, draw_checkered_next_pixel  
+
+    # Determine the checkered color based on the row and column
+    add $t7, $t0, $t1          # Add row and column
+    andi $t7, $t7, 1           # Check if the sum is odd or even
+    beqz $t7, draw_white       # If even, draw white
+    j draw_black               # If odd, draw black
+
+
+draw_white:
+    sw $t3, 0($t8)             # Draw white pixel
+    j draw_checkered_next_pixel
+
+draw_black:
+    sw $t4, 0($t8)             # Draw black pixel
+    j draw_checkered_next_pixel
+
+toggle_inside_flag:
+    # Toggle $t6 (0 → 1, 1 → 0)
+    xori $t6, $t6, 1
+    j draw_checkered_next_pixel
+
+
+handle_gray_block:
+    # If we're not inside a gray block, set the flag to indicate we're now inside
+    beqz $t6, set_inside_flag
+
+    # If we're already inside a gray block, check if this is the last gray block in the sequence
+    addi $t7, $t1, 1           # Check the next column
+    blt $t7, 32, check_next_pixel  # If within bounds, check the next pixel
+    j clear_inside_flag        # If at the end of the row, clear the flag
+
+
+check_next_pixel:
+    # Calculate the address of the next pixel
+    mul $t7, $t0, 128          # Row offset = row * 128
+    mul $t9, $t1, 4            # Column offset = column * 4
+    add $t7, $t7, $t9          # Total offset = row offset + column offset
+    addi $t7, $t7, 4           # Move to the next column
+    addu $t7, $t2, $t7         # Address of the next pixel
+
+    # Load the color of the next pixel
+    lw $t9, 0($t7)             # Load pixel color
+
+    # If the next pixel is not gray, clear the flag (end of gray block sequence)
+    bne $t9, $t5, clear_inside_flag
+
+    # If the next pixel is gray, continue skipping
+    j draw_checkered_next_pixel
+
+set_inside_flag:
+    # Set the flag to indicate we're now inside a gray block
+    li $t6, 1
+    j draw_checkered_next_pixel
+
+clear_inside_flag:
+    # Clear the flag to indicate we're now outside a gray block
+    li $t6, 0
+    j draw_checkered_next_pixel
+
+draw_checkered_next_pixel:
+    addi $t1, $t1, 1           # Move to the next column
+    j draw_checkered_inner_loop
+
+draw_checkered_next_row:
+    addi $t0, $t0, 1           # Move to the next row
+    li $t1, 0                  # Reset column counter
+    li $t6, 0                  # Reset inside flag for the new row
+    j draw_checkered_outer_loop
+
+draw_checkered_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
   # Function to draw a pixel
   # Arguments: $a0 = row, $a1 = column, $a2 = color
   draw_pixel:
@@ -1240,6 +1379,7 @@ delete_vertical_segment:
 
     # Delete the vertical segment by setting pixels to black
 delete_vertical_segment_loop:
+    # j check_left_and_right_2
     bge $a0, $a2, delete_vertical_segment_done  # Stop if current row > end row
     sw $zero, 0($t6)           # Set pixel to black (0x000000)
     addiu $t6, $t6, 128        # Move to the next row (add 128 bytes)
@@ -1315,6 +1455,75 @@ check_gray_at_row_9:
 
     # If not gray, continue shifting
     j shift_rows_above_done    
+
+# check_left_and_right_2:
+#     # Initialize variables
+#     li $s2, 1                  # Start with 1 to include the current pixel
+#     move $s3, $a1              # Start column = current column
+#     move $s4, $a1              # End column = current column
+
+#     # Save the original column for left checking
+#     move $t7, $a1
+
+#     # Check to the right
+#     jal check_right_loop_1
+
+#     # Restore the original column for left checking
+#     move $a1, $t7
+
+#     # Check to the left
+#     jal check_left_loop_1
+
+# check_right_loop_1:
+#     # Check the pixel to the right
+#     addi $a1, $a1, 1            # Move to the next column to the right
+#     jal check_pixel       # Check the color of the pixel
+#     beq $v0, 1, check_right_done_1
+#     addi, $a0, $a0, 1
+#     jal check_pixel
+#     beq $v0, 1, find_collision_loop
+
+#     # Continue checking to the right
+#     j check_right_loop_1
+
+# check_right_done_1:
+#     # Restore return address and return
+#     lw $ra, 0($sp)
+#     addi $sp, $sp, 4
+#     jr $ra
+
+# # Function to check left neighbors for a single pixel
+# # Arguments: $a0 = row, $a1 = column, $a2 = color
+# # Modifies: $s2, $s3
+# check_left_for_neigbour:
+#     # Save return address
+#     addi $sp, $sp, -4
+#     sw $ra, 0($sp)
+
+# check_left_loop_1:
+#     # Check the pixel to the left
+#     addi $a1, $a1, -1           # Move to the next column to the left
+#     jal check_pixel_color       # Check the color of the pixel
+
+#     # Compare the color with the capsule color
+#     bne $v0, $a2, check_left_done  # If colors don't match, exit the loop
+
+#     # Increment the counter
+#     addi $s2, $s2, 1
+
+#     # Update the start column
+#     move $s3, $a1
+
+#     # Continue checking to the left
+#     j check_left_loop
+
+# check_left_done_1:
+#     # Restore return address and return
+#     lw $ra, 0($sp)
+#     addi $sp, $sp, 4
+#     jr $ra
+
+    
   .data
       moving_left:   .asciiz "moving left\n"
       moving_right:  .asciiz "moving right\n"
