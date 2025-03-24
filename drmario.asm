@@ -28,7 +28,7 @@
   
   # Define 3 colors for the capsule halves
   COLOR_RED:    .word 0xff0000  # Red
-  COLOR_GREEN:  .word 0x00ff00  # Green
+  COLOR_GREEN:  .word 0xffff00  # yellow
   COLOR_BLUE:   .word 0x0000ff  # Blue
   COLOR_BLUER:  .word 0x90d5df
   COLOR_EXTRA_BLUE: .word 0x00bfff
@@ -49,7 +49,7 @@
   VIRUS_COLUMN_THIRD: .word 16
   VIRUS_ROW_FOURTH: .word 14
   VIRUS_COLUMN_FOURTH: .word 16
-  VIRUS_COUNT: .word 1
+  VIRUS_COUNT: .word 4
 
   # Initial capsule positions (middle of the gap)
   CAPSULE_ROW_FIRST_INITIAL:  .word 7         # Initial row for the first part
@@ -251,7 +251,7 @@
       beq $t2, $t4, move_right # If 'd' is pressed, move right
       # beq $t2, $t5, move_up    # If 'w' is pressed, move up
       beq $t2, $t6, move_down  # If 's' is pressed, move down
-      beq $t2, $t7, rotate  # If 's' is pressed, move down
+      beq $t2, $t5, rotate  # If 'w' is pressed, move down
       beq $t2, $t8, quit       # if 'q' is pressed, quit
 
       j game_loop
@@ -374,9 +374,9 @@ get_random_location_row:
       # Generate a random number between 0 and 2
       li $v0, 42                # Syscall for random number
       li $a0, 0                 # Random number generator ID
-      li $a1, 11                 # Upper bound (exclusive)
+      li $a1, 8                 # Upper bound (exclusive)
       syscall
-      addi $a0, $a0, 11
+      addi $a0, $a0, 16
       move $v0, $a0
       jr $ra
 
@@ -385,11 +385,12 @@ get_random_location_row:
       # Generate a random number between 0 and 2
       li $v0, 42                # Syscall for random number
       li $a0, 0                 # Random number generator ID
-      li $a1, 14                 # Upper bound (exclusive)
+      li $a1, 8                 # Upper bound (exclusive)
       syscall
-      addi $a0, $a0, 8
+      addi $a0, $a0, 11
       move $v0, $a0
       jr $ra
+
 
   
   get_random_location:
@@ -584,49 +585,53 @@ check_if_virus:
     lw $t1, VIRUS_COLUMN_FIRST       # Load virus column
 
     # Compare input row and column with virus location
-    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
-    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+    beq $a0, $t0, not_virus    # If row doesn't match, not a virus
+
 
     lw $t0, VIRUS_ROW_SECOND          # Load virus row
     lw $t1, VIRUS_COLUMN_SECOND      # Load virus column
 
     # Compare input row and column with virus location
-    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
-    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+    beq $a0, $t0, not_virus    # If row doesn't match, not a virus
+
 
     lw $t0, VIRUS_ROW_THIRD          # Load virus row
     lw $t1, VIRUS_COLUMN_THIRD       # Load virus column
 
     # Compare input row and column with virus location
-    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
-    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+    beq $a0, $t0, not_virus    # If row doesn't match, not a virus
+
 
     lw $t0, VIRUS_ROW_FOURTH          # Load virus row
     lw $t1, VIRUS_COLUMN_FOURTH       # Load virus column
 
     # Compare input row and column with virus location
-    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
-    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
-    
-    # Virus found - return 1
-    li $v0, 1                  # Return 1 (is a virus)
-    jr $ra                     # Return
+    beq $a0, $t0, not_virus    # If row doesn't match, not a virus
 
 
 not_virus:
-    li $v0, 0                  # Return 0 (not a virus)
-    jr $ra                     # Return
+  beq $a1, $t1, viruse    # If column doesn't match, not a virus
+  beq $a1, $t1, viruse    # If column doesn't match, not a virus
+  beq $a1, $t1, viruse    # If column doesn't match, not a virus
+  beq $a1, $t1, viruse    # If column doesn't match, not a virus
+  # Virus not found - return 1
+  li $v0, 0                  # Return 1 (not a virus)
+  jr $ra                     # Return
 
+viruse:
+    li $v0, 1                  # Return 1 (a virus)
+    jr $ra                     # Return
 decrease_virus_count:
     # Decrement virus count and check if game should end
     lw $t0, VIRUS_COUNT
     addi $t0, $t0, -1
     sw $t0, VIRUS_COUNT
-    
-    # If count reaches 0, quit game
+
+        # If count reaches 0, quit game
     beqz $t0, quit
-    
+    li $v0, 0
     jr $ra                     # Return if count > 0
+    
     
     # Function to check capsule orientation
   # Returns: $v0 = 0 if vertical, 1 if horizontal
