@@ -198,9 +198,9 @@
   
   
   no_input:
-      # 5. Sleep for approximately 16 ms (60 FPS)
-      jal sleep
-      j move_down
+      # # 5. Sleep for approximately 16 ms (60 FPS)
+      # jal sleep
+      # j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -497,26 +497,26 @@ check_pixel:
 # Function to check if a pixel is a virus
 # Input: $a0 = row, $a1 = column
 # Output: $v0 = 1 if pixel is a virus, 0 otherwise
-# check_if_virus:
-#     # Load virus location
-#     lw $t0, VIRUS_ROW          # Load virus row
-#     lw $t1, VIRUS_COLUMN       # Load virus column
+check_if_virus:
+    # Load virus location
+    lw $t0, VIRUS_ROW          # Load virus row
+    lw $t1, VIRUS_COLUMN       # Load virus column
 
-#     # Compare input row and column with virus location
+    # Compare input row and column with virus location
     
-#     bne $a0, $t0, not_virus    # If row doesn't match, not a virus
-#     bne $a1, $t1, not_virus    # If column doesn't match, not a virus
-#         li $v0, 4                  # Syscall for print_string
-#     la $a0, virus_found     # Load the address of the message
-#     syscall
+    bne $a0, $t0, not_virus    # If row doesn't match, not a virus
+    bne $a1, $t1, not_virus    # If column doesn't match, not a virus
+        li $v0, 4                  # Syscall for print_string
+    la $a0, virus_found     # Load the address of the message
+    syscall
 
-#     # If both row and column match, it's a virus
-#     li $v0, 1                  # Return 1 (is a virus)
-#     jr $ra                     # Return
+    # If both row and column match, it's a virus
+    li $v0, 1                  # Return 1 (is a virus)
+    jr $ra                     # Return
 
-# not_virus:
-#     li $v0, 0                  # Return 0 (not a virus)
-#     jr $ra                     # Return
+not_virus:
+    li $v0, 0                  # Return 0 (not a virus)
+    jr $ra                     # Return
     
     # Function to check capsule orientation
   # Returns: $v0 = 0 if vertical, 1 if horizontal
@@ -1370,6 +1370,7 @@ delete_contiguous_segment:
     li $t1, 128                # Bytes per row
     mul $t2, $a0, $t1          # Row offset = row * 128
     addu $t3, $t0, $t2         # Starting address of the row
+    
 
     # Calculate the starting address of the segment
     li $t4, 4                  # Bytes per pixel
@@ -1494,7 +1495,9 @@ shift_rows_above_loop:
     bltz $t7, shift_rows_above_done  # If we've reached the top row, exit
     li $t9, 9                  # Row 9
     beq $t7, $t9, check_gray_at_row_9  # If current row is 9, check if pixel is gray
-
+    lw $t9, VIRUS_ROW
+    beq $t7, $t9, check_if_virus
+    beq $v0, 1, shift_rows_above_done
 
     # Calculate the address of the current pixel in the column
     mul $t2, $t7, $t1          # Row offset = row * 128
