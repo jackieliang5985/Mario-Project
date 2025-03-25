@@ -35,6 +35,10 @@
   COLOR_WHITE:  .word 0xFFFFFF  # White
   COLOR_BLACK:  .word 0x000000  # Black
 
+  COLOR_VIRUS_RED:    .word 0xed2939  # Virus-Red
+  COLOR_VIRUS_GREEN:  .word 0xffd300  # Virus-ellow
+  COLOR_VIRUS_BLUE:   .word 0x0041c2  # Virus-Blue
+
   COLOR_SKIN:    .word 0xFCD8A8  # Peach skin tone
   COLOR_HAIR:    .word 0x887000  # Brown hair (this is also used for his seth)
   COLOR_REDCROSS: .word 0xFF0000 # Red cross
@@ -517,13 +521,13 @@ start_easy:
       beq $t0, $t1, check_dup_easy
 
       
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_FIRST
       lw $a1, VIRUS_COLUMN_FIRST
       jal draw_pixel
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_SECOND
       lw $a1, VIRUS_COLUMN_SECOND
@@ -585,19 +589,19 @@ start_medium:
       lw $t1, VIRUS_COLUMN_THIRD
       beq $t0, $t1, check_dup_medium
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0m
       lw $a0, VIRUS_ROW_FIRST
       lw $a1, VIRUS_COLUMN_FIRST
       jal draw_pixel
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_SECOND
       lw $a1, VIRUS_COLUMN_SECOND
       jal draw_pixel
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_THIRD
       lw $a1, VIRUS_COLUMN_THIRD
@@ -683,25 +687,25 @@ start_hard:
 
 
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0m
       lw $a0, VIRUS_ROW_FIRST
       lw $a1, VIRUS_COLUMN_FIRST
       jal draw_pixel
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_SECOND
       lw $a1, VIRUS_COLUMN_SECOND
       jal draw_pixel
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_THIRD
       lw $a1, VIRUS_COLUMN_THIRD
       jal draw_pixel
 
-      jal get_random_color       # Get random color for the first half
+      jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_FOURTH
       lw $a1, VIRUS_COLUMN_FOURTH
@@ -973,6 +977,37 @@ generate_new_capsule:
   select_blue:
       lw $v0, 0($t2)            # Load blue color
       jr $ra
+
+
+get_random_color_two:
+      # Load the address of the colors
+      la $t0, COLOR_VIRUS_RED         # Load address of COLOR_RED
+      la $t1, COLOR_VIRUS_GREEN       # Load address of COLOR_GREEN
+      la $t2, COLOR_VIRUS_BLUE        # Load address of COLOR_BLUE
+  
+      # Generate a random number between 0 and 2
+      li $v0, 42                # Syscall for random number
+      li $a0, 0                 # Random number generator ID
+      li $a1, 3                 # Upper bound (exclusive)
+      syscall
+  
+      # Use the random number to select a color
+      beq $a0, 0, select_red_two    # If 0, select red
+      beq $a0, 1, select_green_two  # If 1, select green
+      beq $a0, 2, select_blue_two   # If 2, select blue
+  
+  select_red_two:
+      lw $v0, 0($t0)            # Load red color
+      jr $ra
+  
+  select_green_two:
+      lw $v0, 0($t1)            # Load green color
+      jr $ra
+  
+  select_blue_two:
+      lw $v0, 0($t2)            # Load blue color
+      jr $ra
+
 
 get_random_location_row:
       # Generate a random number between 0 and 2
