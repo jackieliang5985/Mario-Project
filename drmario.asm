@@ -64,6 +64,11 @@
   CAPSULE_COLOR1: .word 0 #stores the color of the top capsule pixel
   CAPSULE_COLOR2: .word 0 #stores the color of the bottom capsule pixel
 
+NEXT_PILL_ROW: .word 1        # Row for next pill preview
+NEXT_PILL_COL: .word 23       # Column for next pill preview
+NEXT_PILL_COLOR1: .word 0     # Stores color of next pill's first half
+NEXT_PILL_COLOR2: .word 0     # Stores color of next pill's second half
+
   PAUSED: .word 0    # 0 = not paused, 1 = paused
   DIM_COLOR: .word 0x404040      # Dark gray for dim effect
   PAUSE_MSG_ROW: .word 12        # Center row for pause message
@@ -403,8 +408,8 @@ before:
     lw $t0, PAUSED
     bnez $t0, game_loop     # Don't move if paused
       # 5. Sleep for approximately 16 ms (60 FPS)
-      jal sleep
-      j move_down
+      # jal sleep
+      # j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -728,31 +733,49 @@ check_dup_hard:
   
   # Function to draw the initial capsule
   draw_initial_capsule:
-      # Save return address
-      addi $sp, $sp, -4
-      sw $ra, 0($sp)
-  
-      # Generate random colors for the capsule halves
-      jal get_random_color       # Get random color for the first half
-      move $s0, $v0             # Save first color in $s0
-      jal get_random_color       # Get random color for the second half
-      move $s1, $v0             # Save second color in $s1
-  
-      # Draw the first half of the capsule
-      lw $a0, CAPSULE_ROW_FIRST       # Row for the capsule
-      lw $a1, CAPSULE_COL_FIRST      # Column for the capsule
-      move $a2, $s0             # Color for the first half
-      jal draw_pixel             # Draw the first half
-  
-      lw $a0, CAPSULE_ROW_SECOND      # Row for the capsule
-      lw $a1, CAPSULE_COL_SECOND       # Column for the capsule
-      move $a2, $s1             # Color for the second half
-      jal draw_pixel             # Draw the second half
-  
-      # Restore return address and return
-      lw $ra, 0($sp)
-      addi $sp, $sp, 4
-      jr $ra
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Generate random colors for current capsule
+    jal get_random_color
+    move $s0, $v0             # First color in $s0
+    jal get_random_color
+    move $s1, $v0             # Second color in $s1
+
+    # Generate random colors for next capsule preview
+    jal get_random_color
+    sw $v0, NEXT_PILL_COLOR1
+    jal get_random_color
+    sw $v0, NEXT_PILL_COLOR2
+
+    # Draw current capsule at normal position
+    lw $a0, CAPSULE_ROW_FIRST
+    lw $a1, CAPSULE_COL_FIRST
+    move $a2, $s0
+    jal draw_pixel
+
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1
+    jal draw_pixel
+
+    # Draw next capsule preview at row 1, column 23
+    lw $a0, NEXT_PILL_ROW
+    lw $a1, NEXT_PILL_COL
+    lw $a2, NEXT_PILL_COLOR1
+    jal draw_pixel
+
+    lw $a0, NEXT_PILL_ROW
+    addi $a0, $a0, 1          # Second part is below first
+    lw $a1, NEXT_PILL_COL
+    lw $a2, NEXT_PILL_COLOR2
+    jal draw_pixel
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
   
   # Function to get a random color
   get_random_color:
@@ -1338,6 +1361,131 @@ decrease_virus_count:
     # Exit the program
       li $v0, 10               # Syscall for exit
       syscall
+      
+game_over:
+    # If the game is over (row 9 is filled), we allow the player to restart the game
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Flash the screen 3 times (white-black-white-black-white-black)
+    li $t4, 3                  # Number of flashes
+flash_loop:
+    # Flash white
+    jal flash_screen_white
+    li $a0, 150                # 150ms delay
+    li $v0, 32
+    syscall
+    
+    # Flash black
+    jal clear_screen
+    li $a0, 150                # 150ms delay
+    li $v0, 32
+    syscall
+    
+    addi $t4, $t4, -1          # Decrement flash counter
+    bnez $t4, flash_loop       # Repeat if not done
+
+    # Final clear to black
+    jal clear_screen
+
+    # Display game over message (optional)
+    # You could add text display here if you want
+
+game_over_loop:
+    # Wait for 'r' key to restart
+    lw $t0, ADDR_KBRD
+    lw $t1, 0($t0)
+    beqz $t1, game_over_loop  # No key pressed, keep waiting
+
+    # Check if key is 'r' (0x72)
+    lw $t2, 4($t0)
+    li $t3, 0x72             # ASCII 'r'
+    bne $t2, $t3, game_over_loop  # Not 'r', keep waiting
+
+    # 'r' pressed - restart the game
+    jal restart_game
+
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+flash_screen_white:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables
+    lw $t0, ADDR_DSPL         # Base address of display
+    li $t1, 0                 # Pixel counter
+    li $t2, 1024              # Total pixels (256x256 / (8x8) = 32x32 = 1024)
+    lw $t3, COLOR_WHITE       # White color
+
+flash_loop_white:
+    bge $t1, $t2, flash_done_white  # If all pixels processed, exit
+    sw $t3, 0($t0)            # Store white color
+    addi $t0, $t0, 4          # Move to next pixel
+    addi $t1, $t1, 1          # Increment counter
+    j flash_loop_white
+
+flash_done_white:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+clear_screen:
+    # Paint the entire screen black
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables
+    lw $t0, ADDR_DSPL         # Base address of display
+    li $t1, 0                 # Pixel counter
+    li $t2, 1024              # Total pixels (256x256 / (8x8) = 32x32 = 1024)
+
+clear_loop:
+    bge $t1, $t2, clear_done  # If all pixels cleared, exit
+    sw $zero, 0($t0)          # Store black color
+    addi $t0, $t0, 4          # Move to next pixel
+    addi $t1, $t1, 1          # Increment counter
+    j clear_loop
+
+clear_done:
+    # Restore return address and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+restart_game:
+    # Reset all game state variables to initial values
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Reset capsule position
+    lw $t0, CAPSULE_ROW_FIRST_INITIAL
+    sw $t0, CAPSULE_ROW_FIRST
+    lw $t0, CAPSULE_COL_FIRST_INITIAL
+    sw $t0, CAPSULE_COL_FIRST
+    lw $t0, CAPSULE_ROW_SECOND_INITIAL
+    sw $t0, CAPSULE_ROW_SECOND
+    lw $t0, CAPSULE_COL_SECOND_INITIAL
+    sw $t0, CAPSULE_COL_SECOND
+
+    # Reset speed/delay settings
+    li $t0, 60
+    sw $t0, CURRENT_DELAY
+    li $t0, 0
+    sw $t0, SLEEP_COUNTER
+
+    # Reset pause state
+    sw $zero, PAUSED
+
+    # Redraw the game elements
+    j main
 
 check_row_9_covered:
     # Save return address
@@ -1454,37 +1602,78 @@ check_row_9_done:
       j game_loop
   
   place_capsule:
-      # Color the current position of the capsule
-      lw $a0, CAPSULE_ROW_FIRST
-      lw $a1, CAPSULE_COL_FIRST
-      move $a2, $s0            # Color for the first half
-      jal draw_pixel
-  
-      lw $a0, CAPSULE_ROW_SECOND
-      lw $a1, CAPSULE_COL_SECOND
-      move $a2, $s1            # Color for the second half
-      jal draw_pixel
+    # Color the current position of the capsule
+    lw $a0, CAPSULE_ROW_FIRST
+    lw $a1, CAPSULE_COL_FIRST
+    move $a2, $s0            # Color for the first half
+    jal draw_pixel
 
-      jal check_row_neighbors
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1            # Color for the second half
+    jal draw_pixel
 
-      jal check_row_9_covered
-      beq $v0, 1, quit    # If Row 9 is not covered, continue the game
-      
-  
-      # Reset capsule position to the initial position (middle of the gap)
-      lw $t0, CAPSULE_ROW_FIRST_INITIAL  # Load initial row for the first part
-      sw $t0, CAPSULE_ROW_FIRST          # Reset to initial row
-      lw $t0, CAPSULE_COL_FIRST_INITIAL  # Load initial column for the first part
-      sw $t0, CAPSULE_COL_FIRST          # Reset to initial column
-  
-      lw $t0, CAPSULE_ROW_SECOND_INITIAL # Load initial row for the second part
-      sw $t0, CAPSULE_ROW_SECOND         # Reset to initial row
-      lw $t0, CAPSULE_COL_SECOND_INITIAL # Load initial column for the second part
-      sw $t0, CAPSULE_COL_SECOND         # Reset to initial column
-  
-      # Initialize a new capsule
-      jal draw_initial_capsule
-      j game_loop
+    jal check_row_neighbors
+
+    jal check_row_9_covered
+    beq $v0, 1, game_over    # If Row 9 is covered, game over
+
+    # Erase the next pill preview
+    lw $a0, NEXT_PILL_ROW
+    lw $a1, NEXT_PILL_COL
+    li $a2, 0x000000         # Black
+    jal draw_pixel
+
+    lw $a0, NEXT_PILL_ROW
+    addi $a0, $a0, 1         # Second part
+    lw $a1, NEXT_PILL_COL
+    li $a2, 0x000000         # Black
+    jal draw_pixel
+
+    # Move next pill colors to current pill
+    lw $s0, NEXT_PILL_COLOR1
+    lw $s1, NEXT_PILL_COLOR2
+
+    # Reset capsule position to initial position
+    lw $t0, CAPSULE_ROW_FIRST_INITIAL
+    sw $t0, CAPSULE_ROW_FIRST
+    lw $t0, CAPSULE_COL_FIRST_INITIAL
+    sw $t0, CAPSULE_COL_FIRST
+    lw $t0, CAPSULE_ROW_SECOND_INITIAL
+    sw $t0, CAPSULE_ROW_SECOND
+    lw $t0, CAPSULE_COL_SECOND_INITIAL
+    sw $t0, CAPSULE_COL_SECOND
+
+    # Generate new next pill preview
+    jal get_random_color
+    sw $v0, NEXT_PILL_COLOR1
+    jal get_random_color
+    sw $v0, NEXT_PILL_COLOR2
+
+    # Draw new next pill preview
+    lw $a0, NEXT_PILL_ROW
+    lw $a1, NEXT_PILL_COL
+    lw $a2, NEXT_PILL_COLOR1
+    jal draw_pixel
+
+    lw $a0, NEXT_PILL_ROW
+    addi $a0, $a0, 1         # Second part
+    lw $a1, NEXT_PILL_COL
+    lw $a2, NEXT_PILL_COLOR2
+    jal draw_pixel
+
+    # Draw the new current pill
+    lw $a0, CAPSULE_ROW_FIRST
+    lw $a1, CAPSULE_COL_FIRST
+    move $a2, $s0
+    jal draw_pixel
+
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1
+    jal draw_pixel
+
+    j game_loop
       
 erase_pixel:
     # Debug: Print the input parameters
