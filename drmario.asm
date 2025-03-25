@@ -68,7 +68,13 @@
   DIM_COLOR: .word 0x404040      # Dark gray for dim effect
   PAUSE_MSG_ROW: .word 12        # Center row for pause message
   PAUSE_MSG_COL: .word 11        # Starting column for pause message
-  
+
+
+    # Speed control variables
+  SLEEP_COUNTER: .word 0       # Counts sleep calls
+  SPEED_INTERVAL: .word 30     # Increase speed every 30 calls 
+  CURRENT_DELAY: .word 60      # Starts at 60ms (slower)
+  MIN_DELAY: .word 20          # Minimum 20ms (fastest)
   ##############################################################################
   # Mutable Data
   ##############################################################################
@@ -439,9 +445,9 @@
   no_input:
     lw $t0, PAUSED
     bnez $t0, game_loop     # Don't move if paused
-      # # 5. Sleep for approximately 16 ms (60 FPS)
-      # jal sleep
-      # j move_down
+      # 5. Sleep for approximately 16 ms (60 FPS)
+      jal sleep
+      j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -465,19 +471,42 @@
     j game_loop
     
   # Function to sleep for approximately 16.67 ms (60 FPS)
-  sleep:
-      # Debug: Print "Sleeping..."
-      li $v0, 4                # Syscall for printing a string
-      la $a0, sleeping_msg     # Load address of the string
-      syscall
-      
-      # Sleep for 16 ms
-      li $v0, 32               # Syscall for sleep
-      li $a0, 60               # Sleep for 200 ms (approximately 60 FPS)
-      syscall
-      j move_down
-  
-      jr $ra                   # Return to caller
+ sleep:
+    # Save return address if needed
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    # 1. Update speed counter and check if we should increase speed
+    lw $t0, SLEEP_COUNTER
+    lw $t1, SPEED_INTERVAL
+    addi $t0, $t0, 1           # Increment counter
+    sw $t0, SLEEP_COUNTER
+    
+    blt $t0, $t1, no_speed_change  # Not time to speed up yet
+    
+    # Time to increase speed!
+    li $t0, 0                  # Reset counter
+    sw $t0, SLEEP_COUNTER
+    
+    lw $t1, CURRENT_DELAY
+    addi $t1, $t1, -1          # Decrease delay by 1ms (makes game faster)
+    lw $t2, MIN_DELAY
+    bge $t1, $t2, store_new_delay  # Don't go below minimum
+    move $t1, $t2              # Use minimum delay if we went below
+    
+store_new_delay:
+    sw $t1, CURRENT_DELAY
+
+no_speed_change:
+    # 2. Sleep with current delay value
+    lw $a0, CURRENT_DELAY
+    li $v0, 32                 # Syscall for sleep
+    syscall
+    
+    # Restore and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
 
 
   # Function to draw a vertical line
