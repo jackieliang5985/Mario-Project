@@ -59,6 +59,12 @@
 
   CAPSULE_COLOR1: .word 0 #stores the color of the top capsule pixel
   CAPSULE_COLOR2: .word 0 #stores the color of the bottom capsule pixel
+
+  PAUSED: .word 0    # 0 = not paused, 1 = paused
+  DIM_COLOR: .word 0x404040      # Dark gray for dim effect
+  PAUSE_MSG_ROW: .word 12        # Center row for pause message
+  PAUSE_MSG_COL: .word 11        # Starting column for pause message
+
   
   ##############################################################################
   # Mutable Data
@@ -246,25 +252,47 @@
       li $t6, 0x73             # ASCII value for 's' (move down)
       li $t7, 0x72             # ASCII value for 'r' (rotate)
       li $t8, 0x71             # ASCII value for 'q' (quit)
-  
+      li $t9, 0x70             # 'p' (pause)
+    
       beq $t2, $t3, move_left  # If 'a' is pressed, move left
       beq $t2, $t4, move_right # If 'd' is pressed, move right
       # beq $t2, $t5, move_up    # If 'w' is pressed, move up
       beq $t2, $t6, move_down  # If 's' is pressed, move down
       beq $t2, $t5, rotate  # If 'w' is pressed, move down
       beq $t2, $t8, quit       # if 'q' is pressed, quit
+      beq $t2, $t9, toggle_pause # 'p'
 
       j game_loop
   
   
   no_input:
+    lw $t0, PAUSED
+    bnez $t0, game_loop     # Don't move if paused
       # # 5. Sleep for approximately 16 ms (60 FPS)
       # jal sleep
       # j move_down
   
       # 6. Loop back to Step 1
       j game_loop
-  
+
+  toggle_pause:
+    # Save return address if needed
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Toggle pause state
+    lw $t0, PAUSED
+    xori $t0, $t0, 1        # Flip between 0 and 1
+    sw $t0, PAUSED
+
+    # Optional: Add visual feedback (like blinking the screen)
+    # jal show_pause_message maybe something like this
+
+    # Restore and return
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    j game_loop
+    
   # Function to sleep for approximately 16.67 ms (60 FPS)
   sleep:
       # Debug: Print "Sleeping..."
@@ -660,6 +688,8 @@ decrease_virus_count:
       jr $ra
 
   rotate:
+      lw $t0, PAUSED
+      bnez $t0, game_loop     # Don't move if paused
       # Check the current position and rotate accordingly
       lw $t0, CAPSULE_ROW_FIRST
       lw $t1, CAPSULE_COL_FIRST
@@ -809,6 +839,8 @@ decrease_virus_count:
     # Function to move the capsule left
   # Function to move the capsule left
   move_left:
+      lw $t0, PAUSED
+      bnez $t0, game_loop     # Don't move if paused
       # Check capsule orientation
       jal check_orientation
       beqz $v0, vertical_left  # If vertical, handle vertical movement
@@ -863,6 +895,8 @@ decrease_virus_count:
   
    # Function to move the capsule right
   move_right:
+      lw $t0, PAUSED
+      bnez $t0, game_loop     # Don't move if paused
       # Check capsule orientation
       jal check_orientation
       beqz $v0, vertical_right  # If vertical, handle vertical movement
@@ -967,6 +1001,8 @@ check_row_9_done:
   
   # Function to move the capsule down
   move_down:
+      lw $t0, PAUSED
+      bnez $t0, game_loop     # Don't move if paused
       # Check capsule orientation
       jal check_orientation
       beqz $v0, vertical_down  # If vertical, handle vertical movement
