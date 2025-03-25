@@ -35,6 +35,10 @@
   COLOR_WHITE:  .word 0xFFFFFF  # White
   COLOR_BLACK:  .word 0x000000  # Black
 
+  COLOR_SKIN:    .word 0xFCD8A8  # Peach skin tone
+  COLOR_HAIR:    .word 0x887000  # Brown hair (this is also used for his seth)
+  COLOR_REDCROSS: .word 0xFF0000 # Red cross
+
   # Capsule position (middle of the gap)
   CAPSULE_ROW_FIRST:  .word 7         # Row for the capsule (middle of the gap)
   CAPSULE_COL_FIRST:  .word 15        # Column for the capsule (middle of the gap)
@@ -64,7 +68,6 @@
   DIM_COLOR: .word 0x404040      # Dark gray for dim effect
   PAUSE_MSG_ROW: .word 12        # Center row for pause message
   PAUSE_MSG_COL: .word 11        # Starting column for pause message
-
   
   ##############################################################################
   # Mutable Data
@@ -226,7 +229,175 @@
       lw $a1, VIRUS_COLUMN_FOURTH
       
       jal draw_pixel             # Drawing the virus
+
+      # draw the doctor
+
+      li $a0, 3                 # Start at row 3
+      li $a1, 23                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      li $a0, 4                 # Start at row 3
+      li $a1, 23                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 23                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      li $a0, 4                 # Start at row 3
+      li $a1, 22                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
       
+      li $a0, 5                 # Start at row 3
+      li $a1, 22                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      li $a0, 6                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+
+      li $a0, 6                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 4                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 4                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 3                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      
+      li $a0, 3                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 3                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      
+      li $a0, 4                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 4                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 4                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 2                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 2                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 2                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 1                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 5                 # Start at row 3
+      li $a1, 31                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 6                 # Start at row 3
+      li $a1, 31                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+
+      li $a0, 2                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 3                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 2                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 1                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+
+
+
       # Draw the initial capsule in the middle of the gap
       jal draw_initial_capsule
       j game_loop
@@ -307,6 +478,8 @@
       j move_down
   
       jr $ra                   # Return to caller
+
+
   # Function to draw a vertical line
   # Arguments: $a0 = start row, $a1 = start column, $a2 = height
   draw_vertical_line:
