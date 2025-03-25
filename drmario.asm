@@ -502,8 +502,8 @@ start_easy:
 
       jal draw_pixel             # Drawing the virus
 
-      li $s5, 2 
-      sw $s5, VIRUS_COUNT
+      li $s7, 2 
+      sw $s7, VIRUS_COUNT
       
       
   j game_loop
@@ -561,8 +561,8 @@ start_medium:
 
       jal draw_pixel             # Drawing the virus
 
-      li $s6, 3 
-      sw $s6, VIRUS_COUNT
+      li $s7, 3 
+      sw $s7, VIRUS_COUNT
       
       
   j game_loop
