@@ -186,14 +186,6 @@ HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
       lw $a2, COLOR_EXTRA_BLUE
       jal draw_pixel
 
-      
-
-      
-      
-
-
-      
-
       # draw the doctor
 
       li $a0, 3                 # Start at row 3
@@ -2387,9 +2379,31 @@ check_pixel_color:
     add $t5, $t2, $t4         # Total offset = row offset + column offset
     addu $t6, $t0, $t5        # Pixel address = base address + offset
 
+    lw $t0, COLOR_VIRUS_RED
+    lw $t1, COLOR_VIRUS_GREEN
+    lw $t2, COLOR_VIRUS_BLUE
+
     # Load the color of the pixel
     lw $v0, 0($t6)            # Load the color of the pixel
+    beq $v0, $t0, redy
+    beq $v0, $t1, yellowy
+    beq $v0, $t2, bluey
     jr $ra                    # Return the color in $v0
+
+redy:
+  lw $t0, COLOR_RED
+  move $v0, $t0
+  jr $ra
+
+yellowy:
+  lw $t0, COLOR_GREEN
+  move $v0, $t0
+  jr $ra
+
+bluey:
+  lw $t0, COLOR_BLUE
+  move $v0, $t0
+  jr $ra
 
   # Function to delete a contiguous vertical segment of same-colored pixels and shift rows above down
 # Arguments: $a0 = row (start of the vertical segment), $a1 = column, $a2 = end row (end of the vertical segment)
