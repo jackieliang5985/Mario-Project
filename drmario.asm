@@ -69,6 +69,14 @@ NEXT_PILL_COL: .word 23       # Column for next pill preview
 NEXT_PILL_COLOR1: .word 0     # Stores color of next pill's first half
 NEXT_PILL_COLOR2: .word 0     # Stores color of next pill's second half
 
+
+SAVED_CAPSULE_ROW: .word 7        # Row for saved capsule
+SAVED_CAPSULE_COL: .word 6        # Column for saved capsule
+SAVED_CAPSULE_COLOR1: .word 0     # Color of saved capsule's first half
+SAVED_CAPSULE_COLOR2: .word 0     # Color of saved capsule's second half
+HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
+
+
   PAUSED: .word 0    # 0 = not paused, 1 = paused
   DIM_COLOR: .word 0x404040      # Dark gray for dim effect
   PAUSE_MSG_ROW: .word 12        # Center row for pause message
@@ -384,23 +392,33 @@ before:
       move $a0, $t2
       syscall
   
-      li $t3, 0x61             # ASCII value for 'a' (move left)
-      li $t4, 0x64             # ASCII value for 'd' (move right)
-      li $t5, 0x77             # ASCII value for 'w' (move up)
-      li $t6, 0x73             # ASCII value for 's' (move down)
-      li $t7, 0x72             # ASCII value for 'r' (rotate)
-      li $t8, 0x71             # ASCII value for 'q' (quit)
-      li $t9, 0x70             # 'p' (pause)
+       # Movement controls
+    li $t3, 0x61            # 'a' - left
+    beq $t2, $t3, move_left
+    
+    li $t4, 0x64            # 'd' - right
+    beq $t2, $t4, move_right
+    
+    li $t5, 0x73            # 's' - down
+    beq $t2, $t5, move_down
+    
+    li $t6, 0x77            # 'w' - rotate
+    beq $t2, $t6, rotate
+    
+    # Other controls
+    li $t7, 0x70            # 'p' - pause
+    beq $t2, $t7, toggle_pause
+    
+    li $t8, 0x71            # 'q' - quit
+    beq $t2, $t8, quit
+    
+    # Save/retrieve
+    li $t9, 0x66            # 'f' - save
+    beq $t2, $t9, save_capsule
 
-      beq $t2, $t3, move_left  # If 'a' is pressed, move left
-      beq $t2, $t4, move_right # If 'd' is pressed, move right
-      # beq $t2, $t5, move_up    # If 'w' is pressed, move up
-      beq $t2, $t6, move_down  # If 's' is pressed, move down
-      beq $t2, $t5, rotate  # If 'w' is pressed, move down
-      beq $t2, $t8, quit       # if 'q' is pressed, quit
-      beq $t2, $t9, toggle_pause # 'p'
-      
-
+    li $t3, 0x67            # 'g' - retrieve
+    beq $t2, $t3, retrieve_capsule
+    
       j game_loop
   
   
@@ -698,6 +716,155 @@ start_hard:
 check_dup_hard:
   j start_hard
 
+
+# Save function
+save_capsule:
+    lw $t0, PAUSED
+    bnez $t0, game_loop     # Ignore if paused
+    
+    lw $t0, HAS_SAVED_CAPSULE
+    bnez $t0, game_loop     # Already saved, ignore
+
+    # Store current capsule colors
+    sw $s0, SAVED_CAPSULE_COLOR1
+    sw $s1, SAVED_CAPSULE_COLOR2
+    li $t0, 1
+    sw $t0, HAS_SAVED_CAPSULE
+
+    # Draw saved capsule preview at (7,6) and (8,6)
+    lw $a0, SAVED_CAPSULE_ROW
+    lw $a1, SAVED_CAPSULE_COL
+    move $a2, $s0
+    jal draw_pixel
+    
+    addi $a0, $a0, 1        # Second part at (8,6)
+    move $a2, $s1
+    jal draw_pixel
+
+    # Erase current capsule
+    jal erase_capsule
+
+    # Spawn new random capsule at initial position
+    jal generate_new_capsule
+    
+    j game_loop
+
+# Retrieve function  
+retrieve_capsule:
+    lw $t0, PAUSED
+    bnez $t0, game_loop
+    
+    lw $t0, HAS_SAVED_CAPSULE
+    beqz $t0, game_loop     # Nothing to retrieve
+
+    # Erase saved preview at (7,6) and (8,6)
+    lw $a0, SAVED_CAPSULE_ROW
+    lw $a1, SAVED_CAPSULE_COL
+    li $a2, 0x000000
+    jal draw_pixel
+    
+    addi $a0, $a0, 1        # (8,6)
+    jal draw_pixel
+
+    # Erase current capsule
+    jal erase_capsule
+
+    # Load saved colors
+    lw $s0, SAVED_CAPSULE_COLOR1
+    lw $s1, SAVED_CAPSULE_COLOR2
+
+    # Mark slot as empty
+    sw $zero, HAS_SAVED_CAPSULE
+
+    # Place retrieved capsule at initial position (7,15) and (8,15)
+    lw $t0, CAPSULE_ROW_FIRST_INITIAL
+    sw $t0, CAPSULE_ROW_FIRST
+    lw $t0, CAPSULE_COL_FIRST_INITIAL
+    sw $t0, CAPSULE_COL_FIRST
+    lw $t0, CAPSULE_ROW_SECOND_INITIAL
+    sw $t0, CAPSULE_ROW_SECOND
+    lw $t0, CAPSULE_COL_SECOND_INITIAL
+    sw $t0, CAPSULE_COL_SECOND
+
+    # Draw retrieved capsule
+    lw $a0, CAPSULE_ROW_FIRST
+    lw $a1, CAPSULE_COL_FIRST
+    move $a2, $s0
+    jal draw_pixel
+
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1
+    jal draw_pixel
+    
+    j game_loop
+    
+# Helper function to generate a new capsule (unchanged from previous)
+generate_new_capsule:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    # Erase the next pill preview
+    lw $a0, NEXT_PILL_ROW
+    lw $a1, NEXT_PILL_COL
+    li $a2, 0x000000         # Black
+    jal draw_pixel
+
+    lw $a0, NEXT_PILL_ROW
+    addi $a0, $a0, 1         # Second part
+    lw $a1, NEXT_PILL_COL
+    li $a2, 0x000000         # Black
+    jal draw_pixel
+
+    # Move next pill colors to current pill
+    lw $s0, NEXT_PILL_COLOR1
+    lw $s1, NEXT_PILL_COLOR2
+
+    # Reset capsule position to initial position
+    lw $t0, CAPSULE_ROW_FIRST_INITIAL
+    sw $t0, CAPSULE_ROW_FIRST
+    lw $t0, CAPSULE_COL_FIRST_INITIAL
+    sw $t0, CAPSULE_COL_FIRST
+    lw $t0, CAPSULE_ROW_SECOND_INITIAL
+    sw $t0, CAPSULE_ROW_SECOND
+    lw $t0, CAPSULE_COL_SECOND_INITIAL
+    sw $t0, CAPSULE_COL_SECOND
+
+    # Generate new next pill preview
+    jal get_random_color
+    sw $v0, NEXT_PILL_COLOR1
+    jal get_random_color
+    sw $v0, NEXT_PILL_COLOR2
+
+    # Draw new next pill preview
+    lw $a0, NEXT_PILL_ROW
+    lw $a1, NEXT_PILL_COL
+    lw $a2, NEXT_PILL_COLOR1
+    jal draw_pixel
+
+    lw $a0, NEXT_PILL_ROW
+    addi $a0, $a0, 1         # Second part
+    lw $a1, NEXT_PILL_COL
+    lw $a2, NEXT_PILL_COLOR2
+    jal draw_pixel
+
+    # Draw the new current pill
+    lw $a0, CAPSULE_ROW_FIRST
+    lw $a1, CAPSULE_COL_FIRST
+    move $a2, $s0
+    jal draw_pixel
+
+    lw $a0, CAPSULE_ROW_SECOND
+    lw $a1, CAPSULE_COL_SECOND
+    move $a2, $s1
+    jal draw_pixel
+
+    # Restore return address
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
   # Function to draw a vertical line
   # Arguments: $a0 = start row, $a1 = start column, $a2 = height
   draw_vertical_line:
