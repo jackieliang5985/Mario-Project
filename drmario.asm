@@ -351,6 +351,399 @@ HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
       lw $a2, COLOR_WHITE
       jal draw_pixel
 
+      # LEFT EYE
+      li $a0, 6                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 6                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_BLACK
+      jal draw_pixel
+
+      # RIGHT EYE
+      li $a0, 6                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 6                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_BLACK
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+
+      #SKIN BESIDE EYE
+      li $a0, 6                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 7                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+ 
+      #SKIN BELOW EYES
+      li $a0, 8                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 6                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+      #MUSTACHE/MOUTH
+      li $a0, 9                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 29               # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+
+      #BELOW MOUTH
+      li $a0, 10                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 10                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 10                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 10                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 10                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 10                 # Start at row 3
+      li $a1, 29               # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+      li $a0, 10                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_SKIN
+      jal draw_pixel
+
+
+      #BODY
+      li $a0, 11                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 11                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 11                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 11                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 11                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      #BODY 2nd
+      li $a0, 12                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      #BODY 3rd
+      li $a0, 12                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_VIRUS_GREEN
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 12                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      #BODY 4th
+      li $a0, 13                # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 13                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 13                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 13                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 13                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      #BODY 5th
+      li $a0, 14                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 14                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 14                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 14                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 14                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+
+      #SHOES
+      li $a0, 15                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 15                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 15                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 15                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      #SHOES2
+      li $a0, 16                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+      #SHOES3
+      li $a0, 16                 # Start at row 3
+      li $a1, 24                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 25                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 26                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 28                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 29                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 16                 # Start at row 3
+      li $a1, 30                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+      li $a0, 15                 # Start at row 3
+      li $a1, 27                # Start at column 19
+      lw $a2, COLOR_HAIR
+      jal draw_pixel
+
+
+      #SAVED CAPSULE BOX
+      li $a0, 6                 # Start at row 3
+      li $a1, 5                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 6                 # Start at row 3
+      li $a1, 6                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 6                 # Start at row 3
+      li $a1, 7                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 7                 # Start at row 3
+      li $a1, 5                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 7                 # Start at row 3
+      li $a1, 7                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 8                 # Start at row 3
+      li $a1, 5                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 8                 # Start at row 3
+      li $a1, 7                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+
+      li $a0, 9                 # Start at row 3
+      li $a1, 5                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 6                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel
+      li $a0, 9                 # Start at row 3
+      li $a1, 7                # Start at column 19
+      lw $a2, COLOR_WHITE
+      jal draw_pixel  
+    
+      
+      
+
+      
+      
+
+      
+      
+
+      
+
 
 
 
