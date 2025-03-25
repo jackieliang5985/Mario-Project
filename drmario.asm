@@ -169,72 +169,13 @@
       lw $a2, COLOR_EXTRA_BLUE
       jal draw_pixel
 
-      # Virus generation 1
-      jal get_random_color       # Get random color for the first half
-      move $a2, $v0             # Save first color in $s0
       
-      jal get_random_location_column
-      move $a1, $v0
-      sw $a1, VIRUS_COLUMN_FIRST
-
-      jal get_random_location_row
-      move $a0, $v0           
-      sw $a0, VIRUS_ROW_FIRST
-
-      lw $a1, VIRUS_COLUMN_FIRST
-      
-      jal draw_pixel             # Drawing the virus
-      
-      
-      # Virus generation 2
-      jal get_random_color       # Get random color for the first half
-      move $a2, $v0             # Save first color in $s0
-      
-      jal get_random_location_column
-      move $a1, $v0
-      sw $a1, VIRUS_COLUMN_SECOND
-
-      jal get_random_location_row
-      move $a0, $v0           
-      sw $a0, VIRUS_ROW_SECOND
-
-      lw $a1, VIRUS_COLUMN_SECOND
-      
-      jal draw_pixel             # Drawing the virus
 
       
-      # Virus generation 3
-      jal get_random_color       # Get random color for the first half
-      move $a2, $v0             # Save first color in $s0
       
-      jal get_random_location_column
-      move $a1, $v0
-      sw $a1, VIRUS_COLUMN_THIRD
 
-      jal get_random_location_row
-      move $a0, $v0           
-      sw $a0, VIRUS_ROW_THIRD
 
-      lw $a1, VIRUS_COLUMN_THIRD
       
-      jal draw_pixel             # Drawing the virus
-
-
-      # Virus generation 4
-      jal get_random_color       # Get random color for the first half
-      move $a2, $v0             # Save first color in $s0
-      
-      jal get_random_location_column
-      move $a1, $v0
-      sw $a1, VIRUS_COLUMN_FOURTH
-
-      jal get_random_location_row
-      move $a0, $v0           
-      sw $a0, VIRUS_ROW_FOURTH
-
-      lw $a1, VIRUS_COLUMN_FOURTH
-      
-      jal draw_pixel             # Drawing the virus
 
       # draw the doctor
 
@@ -406,7 +347,22 @@
 
       # Draw the initial capsule in the middle of the gap
       jal draw_initial_capsule
-      j game_loop
+      
+      j before
+
+before:
+      lw $t0, ADDR_KBRD
+      lw $t1, 0($t0)
+      lw $t2, 4($t0)
+
+      li $s5, 0x65             # Easy
+      li $s6, 0x6d             # Medium
+      li $s7, 0x68             # Hard
+
+      beq $t2, $s5, start_easy # 'p'
+      beq $t2, $s6, start_medium # 'p'
+      beq $t2, $s7, start_hard # 'p'
+      j before
   
   game_loop:
       # 1. Read the keyboard status
@@ -430,7 +386,7 @@
       li $t7, 0x72             # ASCII value for 'r' (rotate)
       li $t8, 0x71             # ASCII value for 'q' (quit)
       li $t9, 0x70             # 'p' (pause)
-    
+
       beq $t2, $t3, move_left  # If 'a' is pressed, move left
       beq $t2, $t4, move_right # If 'd' is pressed, move right
       # beq $t2, $t5, move_up    # If 'w' is pressed, move up
@@ -438,6 +394,7 @@
       beq $t2, $t5, rotate  # If 'w' is pressed, move down
       beq $t2, $t8, quit       # if 'q' is pressed, quit
       beq $t2, $t9, toggle_pause # 'p'
+      
 
       j game_loop
   
@@ -507,6 +464,181 @@ no_speed_change:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+
+start_easy:
+  li $s5, 200
+  sw $s5, CURRENT_DELAY
+
+  # Virus generation 1
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_FIRST
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_FIRST
+
+      lw $a1, VIRUS_COLUMN_FIRST
+      
+      jal draw_pixel             # Drawing the virus
+      
+      
+      # Virus generation 2
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_SECOND
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_SECOND
+
+      lw $a1, VIRUS_COLUMN_SECOND
+
+      jal draw_pixel             # Drawing the virus
+
+      li $s5, 2 
+      sw $s5, VIRUS_COUNT
+      
+      
+  j game_loop
+
+start_medium:
+  li $s6, 100
+  sw $s6, CURRENT_DELAY
+
+  # Virus generation 1
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_FIRST
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_FIRST
+
+      lw $a1, VIRUS_COLUMN_FIRST
+      
+      jal draw_pixel             # Drawing the virus
+      
+      
+      # Virus generation 2
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_SECOND
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_SECOND
+
+      lw $a1, VIRUS_COLUMN_SECOND
+
+      jal draw_pixel             # Drawing the virus
+
+  # Virus generation 3
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_THIRD
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_THIRD
+
+      lw $a1, VIRUS_COLUMN_THIRD
+
+      jal draw_pixel             # Drawing the virus
+
+      li $s6, 3 
+      sw $s6, VIRUS_COUNT
+      
+      
+  j game_loop
+
+start_hard:
+  li $s7, 60
+  sw $s7, CURRENT_DELAY
+ # Virus generation 1
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_FIRST
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_FIRST
+
+      lw $a1, VIRUS_COLUMN_FIRST
+      
+      jal draw_pixel             # Drawing the virus
+      
+      
+      # Virus generation 2
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_SECOND
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_SECOND
+
+      lw $a1, VIRUS_COLUMN_SECOND
+
+      jal draw_pixel             # Drawing the virus
+
+  # Virus generation 3
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_THIRD
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_THIRD
+
+      lw $a1, VIRUS_COLUMN_THIRD
+
+      jal draw_pixel             # Drawing the virus
+
+  # Virus generation 4
+      jal get_random_color       # Get random color for the first half
+      move $a2, $v0             # Save first color in $s0
+      
+      jal get_random_location_column
+      move $a1, $v0
+      sw $a1, VIRUS_COLUMN_FOURTH
+
+      jal get_random_location_row
+      move $a0, $v0           
+      sw $a0, VIRUS_ROW_FOURTH
+
+      lw $a1, VIRUS_COLUMN_FOURTH
+      
+      jal draw_pixel             # Drawing the virus
+
+      li $s7, 4
+      sw $s7, VIRUS_COUNT
+      
+  j game_loop
 
 
   # Function to draw a vertical line
