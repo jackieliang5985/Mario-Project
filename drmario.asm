@@ -1975,9 +1975,7 @@ flash_loop:
 
     # Final clear to black
     jal clear_screen
-
-    # Display game over message (optional)
-    # You could add text display here if you want
+    jal display_game_over_text
 
 game_over_loop:
     # Wait for 'r' key to restart
@@ -2045,8 +2043,899 @@ clear_done:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+    
+display_game_over_text:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
 
+    # Set color to white
+    lw $t0, COLOR_WHITE
+
+    # Draw "GAME OVER" centered on screen
+    # Each letter is 3 wide + 1 space, total width = 15 (3x5 letters + 4 spaces)
+    # Starting at column 8, row 12
+
+    li $a0, 7
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 8
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 10
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 11
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 12
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+# Bottom of g
+
+    li $a0, 13
+    li $a1, 4
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+        li $a0, 13
+    li $a1, 5
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 6
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 7
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 13
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Line that sticks out of end of bottom of G
+    li $a0, 12
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 11
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 7
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 6
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 5
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    ## Top of G
+    li $a0, 7
+    li $a1, 4
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 5
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 6
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 7
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Drawing A
+    
+    li $a0, 7
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 8
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 10
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 11
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 12
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Other straight side of A
+   li $a0, 7
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 8
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 10
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 11
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 12
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    # Top of A
+
+    li $a0, 7
+    li $a1, 11
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+        li $a0, 7
+    li $a1, 12
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+            li $a0, 7
+    li $a1, 13
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+            li $a0, 7
+    li $a1, 14
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+            li $a0, 7
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Middle of A
+    li $a0, 10
+    li $a1, 11
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+        li $a0, 10
+    li $a1, 12
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+            li $a0, 10
+    li $a1, 13
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+            li $a0, 10
+    li $a1, 14
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Drawing M
+    li $a0, 7
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 8
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 10
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 11
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 12
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Otherside of M
+
+    li $a0, 7
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 8
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 10
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 11
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 12
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 23
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # The 1st diagonal line
+
+    li $a0, 7
+    li $a1, 18
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 8
+    li $a1, 19
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 20
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 8
+    li $a1, 21
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 22
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    #Drawing E
+
+    li $a0, 7
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 8
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 9
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 10
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 11
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 12
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Bottom of E 
+
+    li $a0, 13
+    li $a1, 26
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 27
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 28
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 13
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Middle
+
+    li $a0, 10
+    li $a1, 26
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 27
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 28
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 10
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    # Top 
+    
+    li $a0, 7
+    li $a1, 26
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 27
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 28
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    # Drawing O
+
+    li $a0, 15
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 16
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 17
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 18
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 19
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 20
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 3
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Bottom of O
+
+    li $a0, 21
+    li $a1, 4
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 5
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 6
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 7
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Other side of O
+    
+li $a0, 15
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 16
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 17
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 18
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 19
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 20
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 8
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Top Of O 
+
+    li $a0, 15
+    li $a1, 4
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 5
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 6
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 7
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+
+    # Middle of V (4)
+    li $a0, 21
+    li $a1, 12
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 21
+    li $a1, 13
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # left side
+
+    li $a0, 20
+    li $a1, 11
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 19
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 18
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 17
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 16
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 10
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Right side
+    
+    
+    li $a0, 20
+    li $a1, 14
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 19
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 18
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 17
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 16
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 15
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+
+    #Drawing E
+
+    li $a0, 15
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 16
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 17
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 18
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 19
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 20
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 17
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Bottom of E 
+
+    li $a0, 21
+    li $a1, 18
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 19
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 20
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 21
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+        li $a0, 21
+    li $a1, 22
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Middle
+
+    li $a0, 18
+    li $a1, 18
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 18
+    li $a1, 19
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 18
+    li $a1, 20
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 18
+    li $a1, 21
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+        li $a0, 18
+    li $a1, 22
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    # Top 
+    
+    li $a0, 15
+    li $a1, 18
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 19
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 20
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 21
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 22
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # Drawing r
+
+    li $a0, 15
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 16
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 17
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 18
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+    li $a0, 19
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 20
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 21
+    li $a1, 24
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+# Bottom of R
+
+    li $a0, 21
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 20
+    li $a1, 28
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 19
+    li $a1, 27
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 18
+    li $a1, 26
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    # The top part 
+
+    li $a0, 18
+    li $a1, 26
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+     li $a0, 18
+    li $a1, 27
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+     li $a0, 18
+    li $a1, 28
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+     li $a0, 18
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+     li $a0, 17
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+     li $a0, 16
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 29
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+    li $a0, 15
+    li $a1, 28
+    lw $a2, COLOR_RED
+    jal draw_pixel
+
+       li $a0, 15
+    li $a1, 27
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+       li $a0, 15
+    li $a1, 26
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    
+       li $a0, 15
+    li $a1, 25
+    lw $a2, COLOR_RED
+    jal draw_pixel
+    j game_over_loop
+    
 restart_game:
+    jal clear_screen # clear the writing
     # Reset all game state variables to initial values
     # Save return address
     addi $sp, $sp, -4
