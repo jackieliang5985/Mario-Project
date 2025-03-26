@@ -693,45 +693,49 @@ HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
       li $a1, 5                # Start at column 19
       lw $a2, COLOR_WHITE
       jal draw_pixel
+      
       li $a0, 6                 # Start at row 3
       li $a1, 6                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
+      
       li $a0, 6                 # Start at row 3
       li $a1, 7                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
 
       li $a0, 7                 # Start at row 3
       li $a1, 5                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
+      
       li $a0, 7                 # Start at row 3
       li $a1, 7                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
 
       li $a0, 8                 # Start at row 3
       li $a1, 5                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
+      
       li $a0, 8                 # Start at row 3
       li $a1, 7                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
 
       li $a0, 9                 # Start at row 3
       li $a1, 5                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
+      
       li $a0, 9                 # Start at row 3
       li $a1, 6                # Start at column 19
-      lw $a2, COLOR_WHITE
       jal draw_pixel
+      
       li $a0, 9                 # Start at row 3
       li $a1, 7                # Start at column 19
-      lw $a2, COLOR_WHITE
-      jal draw_pixel  
+      jal draw_pixel
+
+      lw $a2, COLOR_BLACK
+      li $a0, 8                 # Start at row 3
+      li $a1, 6                # Start at column 19
+      jal draw_pixel
+
+      
     
       
       
@@ -911,15 +915,73 @@ start_easy:
       lw $a0, VIRUS_ROW_FIRST
       lw $a1, VIRUS_COLUMN_FIRST
       jal draw_pixel
+      li $a0, 18
+      li $a1, 25
+      jal draw_pixel
 
       jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_SECOND
       lw $a1, VIRUS_COLUMN_SECOND
       jal draw_pixel
+      li $a0, 18
+      li $a1, 29
+      jal draw_pixel
       
       li $s7, 2 
       sw $s7, VIRUS_COUNT
+
+      lw $a2, COLOR_WHITE
+      
+      li $a0, 17
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 25
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 26
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 26
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 25
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 26
+      jal draw_pixel
+
+      li $a0, 17
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 29
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 30
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 30
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 29
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 30
+      jal draw_pixel
       
       
   j game_loop
@@ -979,11 +1041,17 @@ start_medium:
       lw $a0, VIRUS_ROW_FIRST
       lw $a1, VIRUS_COLUMN_FIRST
       jal draw_pixel
+      li $a0, 18
+      li $a1, 25
+      jal draw_pixel
 
       jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_SECOND
       lw $a1, VIRUS_COLUMN_SECOND
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 27
       jal draw_pixel
 
       jal get_random_color_two       # Get random color for the first half
@@ -991,12 +1059,66 @@ start_medium:
       lw $a0, VIRUS_ROW_THIRD
       lw $a1, VIRUS_COLUMN_THIRD
       jal draw_pixel
+      li $a0, 18
+      li $a1, 29
+      jal draw_pixel
 
-      
       li $s7, 3 
       sw $s7, VIRUS_COUNT
+
+      lw $a2, COLOR_WHITE
       
+      li $a0, 17
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 25
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 26
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 27
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 29
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 30
+      jal draw_pixel
+
+      li $a0, 18
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 30
+      jal draw_pixel
       
+      li $a0, 19
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 25
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 26
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 27
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 29
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 30
+      jal draw_pixel
+
   j game_loop
 
 check_dup_medium:
@@ -1077,11 +1199,17 @@ start_hard:
       lw $a0, VIRUS_ROW_FIRST
       lw $a1, VIRUS_COLUMN_FIRST
       jal draw_pixel
+      li $a0, 18
+      li $a1, 25
+      jal draw_pixel
 
       jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_SECOND
       lw $a1, VIRUS_COLUMN_SECOND
+      jal draw_pixel
+      li $a0, 18
+      li $a1, 27
       jal draw_pixel
 
       jal get_random_color_two       # Get random color for the first half
@@ -1089,16 +1217,80 @@ start_hard:
       lw $a0, VIRUS_ROW_THIRD
       lw $a1, VIRUS_COLUMN_THIRD
       jal draw_pixel
+      li $a0, 18
+      li $a1, 29
+      jal draw_pixel
 
       jal get_random_color_two       # Get random color for the first half
       move $a2, $v0             # Save first color in $s0
       lw $a0, VIRUS_ROW_FOURTH
       lw $a1, VIRUS_COLUMN_FOURTH
       jal draw_pixel
+      li $a0, 18
+      li $a1, 31
+      jal draw_pixel
 
       
       li $s7, 4
       sw $s7, VIRUS_COUNT
+
+      lw $a2, COLOR_WHITE
+
+      li $a0, 17
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 25
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 26
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 27
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 29
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 30
+      jal draw_pixel
+      li $a0, 17
+      li $a1, 31
+      jal draw_pixel
+
+      li $a0, 18
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 31
+      jal draw_pixel
+      
+      li $a0, 19
+      li $a1, 24
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 25
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 26
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 27
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 28
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 29
+      jal draw_pixel
+      li $a0, 19
+      li $a1, 30
+      jal draw_pixel
+
+
       
   j game_loop
 
