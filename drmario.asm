@@ -811,16 +811,16 @@ before:
 
     li $t3, 0x67            # 'g' - retrieve
     beq $t2, $t3, retrieve_capsule
-    
-      j game_loop
+   
+    j game_loop
   
   
   no_input:
     lw $t0, PAUSED
     bnez $t0, game_loop     # Don't move if paused
       # 5. Sleep for approximately 16 ms (60 FPS)
-      # jal sleep
-      # j move_down
+      jal sleep
+      j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -834,6 +834,8 @@ before:
     lw $t0, PAUSED
     xori $t0, $t0, 1        # Flip between 0 and 1
     sw $t0, PAUSED
+    beq $t0, 1, paused_message
+    beq $t0, 0, redraw_corner
 
     # Optional: Add visual feedback (like blinking the screen)
     # jal show_pause_message maybe something like this
@@ -842,6 +844,83 @@ before:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     j game_loop
+
+paused_message:
+  lw $a2, COLOR_RED
+  li $a0, 0                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  li $a0, 1                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  li $a0, 2                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  li $a0, 0                 # Start at row 3
+  li $a1, 1                # Start at column 19
+  jal draw_pixel
+  li $a0, 0                 # Start at row 3
+  li $a1, 2                # Start at column 19
+  jal draw_pixel
+  li $a0, 1                 # Start at row 3
+  li $a1, 2                # Start at column 19
+  jal draw_pixel
+  li $a0, 2                 # Start at row 3
+  li $a1, 2                # Start at column 19
+  jal draw_pixel
+  li $a0, 2                 # Start at row 3
+  li $a1, 1                # Start at column 19
+  jal draw_pixel
+  li $a0, 3                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  li $a0, 4                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  j game_loop
+
+redraw_corner:
+  lw $a2, COLOR_EXTRA_BLUE
+  li $a0, 0                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_BLACK
+  li $a0, 1                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_EXTRA_BLUE
+  li $a0, 2                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_BLACK
+  li $a0, 0                 # Start at row 3
+  li $a1, 1                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_EXTRA_BLUE
+  li $a0, 0                 # Start at row 3
+  li $a1, 2                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_BLACK
+  li $a0, 1                 # Start at row 3
+  li $a1, 2                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_EXTRA_BLUE
+  li $a0, 2                 # Start at row 3
+  li $a1, 2                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_BLACK
+  li $a0, 2                 # Start at row 3
+  li $a1, 1                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_BLACK
+  li $a0, 3                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  lw $a2, COLOR_EXTRA_BLUE
+  li $a0, 4                 # Start at row 3
+  li $a1, 0                # Start at column 19
+  jal draw_pixel
+  j game_loop
     
   # Function to sleep for approximately 16.67 ms (60 FPS)
  sleep:
