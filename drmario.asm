@@ -2083,6 +2083,42 @@ animate_mario:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+
+
+animate_mario_happy:
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # --- SMILE---
+    li $a0, 8
+    li $a1, 25
+    lw $a2, COLOR_HAIR  # Close eye
+    jal draw_pixel
+
+    li $a0, 8
+    li $a1, 29
+    lw $a2, COLOR_HAIR  # Close eye
+    jal draw_pixel
+  
+    # 50ms delay
+    li $a0, 250
+    li $v0, 32
+    syscall
+    
+        li $a0, 8
+    li $a1, 25
+    lw $a2, COLOR_SKIN  # Close eye
+    jal draw_pixel
+
+    li $a0, 8
+    li $a1, 29
+    lw $a2, COLOR_SKIN  # Close eye
+    jal draw_pixel
+    
+
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
     
 viruses_cleared_sequence:
 
@@ -3866,8 +3902,6 @@ animate_pill_squash:
     lw $a1, CAPSULE_COL_SECOND
     move $a2, $s1
     jal draw_pixel
-
-    jal animate_pill_squash 
     
     j game_loop
       
@@ -4358,7 +4392,11 @@ shift_rows_done:
     j shift_columns_loop
 
 shift_columns_done:
-    # Restore return address and return
+     # Save $ra since we're calling another function
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    jal animate_mario_happy
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
@@ -4425,6 +4463,9 @@ delete_vertical_segment:
     mul $t2, $t7, $t1          # Row offset
     addu $t6, $t0, $t2         # Row address
     addu $t6, $t6, $t4         # Pixel address
+
+    
+    
     
 delete_vertical_segment_loop:
     bgt $t7, $a2, deletion_done  # Stop if current row > end row
@@ -4434,9 +4475,32 @@ delete_vertical_segment_loop:
     j delete_vertical_segment_loop
 
 deletion_done:
-    # Now shift all pixels above the deleted segment down
-    # Start from the row above the top of the deleted segment
-    addi $t7, $a0, -1          # Start at row above deletion
+    # Save ALL needed registers
+    addi $sp, $sp, -20
+    sw $ra, 0($sp)
+    sw $a0, 4($sp)
+    sw $a1, 8($sp)
+    sw $t0, 12($sp)
+    sw $t4, 16($sp)
+    
+    jal animate_mario_happy
+    
+    # Restore all registers
+    lw $ra, 0($sp)
+    lw $a0, 4($sp)
+    lw $a1, 8($sp)
+    lw $t0, 12($sp)
+    lw $t4, 16($sp)
+    addi $sp, $sp, 20
+    
+    # Full re-initialization
+    addi $t7, $a0, -1
+    lw $t0, ADDR_DSPL
+    li $t1, 128
+    li $t3, 4
+    mul $t4, $a1, $t3
+    
+    j shift_rows_above_loop
     
 shift_rows_above_loop:
     bltz $t7, shift_rows_above_done  # If we've reached the top row, exit
@@ -4471,6 +4535,7 @@ shift_rows_above_loop:
     
     # Find the lowest empty space below this pixel
     move $t8, $t7              # Current row
+
 find_empty_space_loop:
     addiu $t8, $t8, 1          # Next row down
     bgt $t8, 26, found_space   # If at bottom, use this
@@ -4496,15 +4561,22 @@ found_space:
     addu $t2, $t2, $t4
     sw $t5, 0($t2)             # Store pixel in new position
     sw $zero, 0($t6)           # Clear original position
-    
+
 skip_shift:
     addiu $t7, $t7, -1         # Move up one row
     j shift_rows_above_loop
 
+
 shift_rows_above_done:
+    # Save $ra since we're calling another function
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    jal animate_mario_happy
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
+
     
 check_gray_at_row_9:
     # Calculate the address of the pixel at row 9
