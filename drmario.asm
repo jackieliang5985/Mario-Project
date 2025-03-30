@@ -4317,9 +4317,14 @@ check_top_done:
 # Function to delete a contiguous segment of same-colored pixels in a row and shift pixels above down
 # Arguments: $a0 = row, $a1 = start column, $a2 = end column
 delete_contiguous_segment:
-    # Save return address
-    addi $sp, $sp, -4
+    # Save return address and all parameters
+    addi $sp, $sp, -24
     sw $ra, 0($sp)
+    sw $a0, 4($sp)             # Save row
+    sw $a1, 8($sp)             # Save start column
+    sw $a2, 12($sp)            # Save end column
+    sw $s0, 16($sp)            # Save $s0 (we'll use it)
+    sw $s1, 20($sp)            # Save $s1 (we'll use it)
 
     # Initialize variables
     lw $t0, ADDR_DSPL          # Base address of display
@@ -4327,7 +4332,6 @@ delete_contiguous_segment:
     mul $t2, $a0, $t1          # Row offset = row * 128
     addu $t3, $t0, $t2         # Starting address of the row
     
-
     # Calculate the starting address of the segment
     li $t4, 4                  # Bytes per pixel
     mul $t5, $a1, $t4          # Column offset = start column * 4
@@ -4337,21 +4341,100 @@ delete_contiguous_segment:
     mul $t7, $a2, $t4          # Column offset = end column * 4
     addu $t8, $t3, $t7         # Ending address of the segment
 
-    # Delete the segment by setting pixels to black
+    # Save these critical addresses for later
+    move $s0, $t3              # Save row base address
+    move $s1, $t4              # Save bytes per pixel
+
+    # Fade animation - gradually darken the pixels
+    li $t9, 5                  # Number of fade steps
+    
+fade_animation_loop:
+    # Process each pixel in the segment
+    move $t6, $s0              # Reset to row base address
+    add $t6, $t6, $t5          # Add start column offset
+    
+    move $s2, $a1              # Column counter (start at start column)
+    
+pixel_fade_loop:
+    bgt $s2, $a2, fade_step_done  # If we've passed the end column, finish this fade step
+    
+    # Load current pixel color
+    lw $a3, 0($t6)
+    
+    # Skip if already black
+    beqz $a3, skip_fade
+    
+    # Darken the color by reducing RGB values
+    # Extract color components
+    andi $t0, $a3, 0xFF0000    # Red component
+    srl $t0, $t0, 16
+    srl $t1, $t0, 1             # Reduce red by half
+    sll $t1, $t1, 16
+    
+    andi $t0, $a3, 0x00FF00     # Green component
+    srl $t0, $t0, 8
+    srl $t2, $t0, 1             # Reduce green by half
+    sll $t2, $t2, 8
+    
+    andi $t0, $a3, 0x0000FF     # Blue component
+    srl $t3, $t0, 1             # Reduce blue by half
+    
+    # Combine components
+    or $a3, $t1, $t2
+    or $a3, $a3, $t3
+    
+    # Store darkened color
+    sw $a3, 0($t6)
+    
+skip_fade:
+    addiu $t6, $t6, 4          # Move to next pixel
+    addiu $s2, $s2, 1          # Increment column counter
+    j pixel_fade_loop
+
+fade_step_done:
+    # Short delay between fade steps
+    li $a0, 50                 # 50ms delay
+    li $v0, 32
+    syscall
+    
+    addi $t9, $t9, -1          # Decrement fade counter
+    bnez $t9, fade_animation_loop
+
+    # Now fully delete the segment by setting pixels to black
+    move $t6, $s0              # Reset to row base address
+    add $t6, $t6, $t5          # Add start column offset
+    move $s2, $a1              # Reset column counter
+
 delete_segment_loop:
-    bgt $t6, $t8, delete_segment_done  # If we've passed the end column, exit
+    bgt $s2, $a2, delete_segment_done  # If we've passed the end column, exit
     sw $zero, 0($t6)           # Set pixel to black (0x000000)
     addiu $t6, $t6, 4          # Move to the next pixel
+    addiu $s2, $s2, 1          # Increment column counter
     j delete_segment_loop
 
 delete_segment_done:
+    # Play happy animation
+    jal animate_mario_happy
+    
+    # Restore parameters for shifting
+    lw $a0, 4($sp)             # Restore row
+    lw $a1, 8($sp)             # Restore start column
+    lw $a2, 12($sp)            # Restore end column
+    
+    # Reinitialize display address and row size
+    lw $t0, ADDR_DSPL
+    li $t1, 128
+    mul $t2, $a0, $t1
+    addu $t3, $t0, $t2
+    
     # Shift pixels above the deleted segment down
     move $t9, $a1              # Start column
+    
 shift_columns_loop:
     bgt $t9, $a2, shift_columns_done  # If we've passed the end column, exit
 
     # Calculate the address of the current column in the deleted row
-    mul $t5, $t9, $t4          # Column offset = column * 4
+    mul $t5, $t9, $s1          # Column offset = column * 4 (using saved $s1)
     addu $t6, $t3, $t5         # Address of the current column in the deleted row
 
     # Shift pixels above down
@@ -4365,15 +4448,7 @@ shift_rows_loop:
 
     # Copy the pixel above to the current row
     lw $t5, 0($t8)             # Load pixel from the row above
-    li $t0, 0x000000           # Assume black blocks are 0x000000
-    beq $t5, $t0, shift_rows_done  # If black block, stop shifting
-
-    # # Check if the pixel above is a virus
-    # move $a0, $t7              # Current row
-    # addi $a0, $a0, -1          # Row of the pixel above
-    # move $a1, $t9              # Column of the pixel above
-    # jal check_if_virus         # Check if it's a virus
-    # bnez $v0, shift_rows_done  # If it's a virus, stop shifting
+    beqz $t5, shift_rows_done  # If black block, stop shifting
 
     # Copy the pixel above to the current row
     sw $t5, 0($t6)             # Store pixel in the current row
@@ -4392,13 +4467,11 @@ shift_rows_done:
     j shift_columns_loop
 
 shift_columns_done:
-     # Save $ra since we're calling another function
-    addi $sp, $sp, -4
-    sw $ra, 0($sp)
-    
-    jal animate_mario_happy
+    # Restore saved registers and return
+    lw $s1, 20($sp)
+    lw $s0, 16($sp)
     lw $ra, 0($sp)
-    addi $sp, $sp, 4
+    addi $sp, $sp, 24
     jr $ra
 
 
@@ -4445,8 +4518,8 @@ bluey:
   move $v0, $t0
   jr $ra
 
-  # Function to delete a contiguous vertical segment of same-colored pixels and shift rows above down
-# Arguments: $a0 = row (start of the vertical segment), $a1 = column, $a2 = end row (end of the vertical segment)
+# Function to delete a contiguous vertical segment of same-colored pixels and shift rows above down
+# Arguments: $a0 = start row, $a1 = column, $a2 = end row
 delete_vertical_segment:
     # Save return address
     addi $sp, $sp, -4
@@ -4592,7 +4665,6 @@ check_gray_at_row_9:
     # If not gray, continue shifting
     j shift_rows_above_done
     
-
 # check_left_and_right_2:
 #     # Initialize variables
 #     li $s2, 1                  # Start with 1 to include the current pixel
