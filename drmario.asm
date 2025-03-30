@@ -96,10 +96,22 @@ HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
 
 
     # Speed control variables
-  SLEEP_COUNTER: .word 0       # Counts sleep calls
-  SPEED_INTERVAL: .word 30     # Increase speed every 30 calls 
-  CURRENT_DELAY: .word 60      # Starts at 60ms (slower)
-  MIN_DELAY: .word 20          # Minimum 20ms (fastest)
+    SLEEP_COUNTER: .word 0       # Counts sleep calls
+    SPEED_INTERVAL: .word 30     # Increase speed every 30 calls 
+    CURRENT_DELAY: .word 60      # Starts at 60ms (slower)
+    MIN_DELAY: .word 20          # Minimum 20ms (fastest)
+    
+    EASY_SPEED_INTERVAL:   .word 10     # Speed increases every 10 calls
+    EASY_INITIAL_DELAY:    .word 80     # Starts at 80ms
+    EASY_MIN_DELAY:        .word 40     # Minimum 40ms
+    
+    MEDIUM_SPEED_INTERVAL: .word 5     # Speed increases every 5 calls  
+    MEDIUM_INITIAL_DELAY:  .word 60     # Starts at 60ms
+    MEDIUM_MIN_DELAY:      .word 25     # Minimum 25ms
+    
+    HARD_SPEED_INTERVAL:   .word 3     # Speed increases every 3 calls
+    HARD_INITIAL_DELAY:    .word 40     # Starts at 40ms  
+    HARD_MIN_DELAY:        .word 15     # Minimum 15ms
 
   ROTATION_STATE: .word 0  # 0=vertical, 1=diagonal, 2=horizontal
   ##############################################################################
@@ -835,8 +847,8 @@ before:
     lw $t0, PAUSED
     bnez $t0, game_loop     # Don't move if paused
       # 5. Sleep for approximately 16 ms (60 FPS)
-      # jal sleep
-      # j move_down
+      jal sleep
+      j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -946,8 +958,8 @@ redraw_corner:
     
     # 1. Update speed counter and check if we should increase speed
     lw $t0, SLEEP_COUNTER
-    lw $t1, SPEED_INTERVAL
-    addi $t0, $t0, 1           # Increment counter
+    lw $t1, SPEED_INTERVAL      # Now uses difficulty-specific interval
+    addi $t0, $t0, 1
     sw $t0, SLEEP_COUNTER
     
     blt $t0, $t1, no_speed_change  # Not time to speed up yet
@@ -957,7 +969,7 @@ redraw_corner:
     sw $t0, SLEEP_COUNTER
     
     lw $t1, CURRENT_DELAY
-    addi $t1, $t1, -1          # Decrease delay by 1ms (makes game faster)
+    addi $t1, $t1, -5          # Decrease delay by 1ms (makes game faster)
     lw $t2, MIN_DELAY
     bge $t1, $t2, store_new_delay  # Don't go below minimum
     move $t1, $t2              # Use minimum delay if we went below
@@ -977,6 +989,15 @@ no_speed_change:
     jr $ra
 
 start_easy:
+
+      # Load easy speed settings
+    lw $t0, EASY_INITIAL_DELAY
+    sw $t0, CURRENT_DELAY
+    lw $t0, EASY_SPEED_INTERVAL
+    sw $t0, SPEED_INTERVAL
+    lw $t0, EASY_MIN_DELAY
+    sw $t0, MIN_DELAY
+    
   li $s5, 200
   sw $s5, CURRENT_DELAY
 
@@ -1087,6 +1108,14 @@ check_dup_easy:
 start_medium:
   li $s6, 100
   sw $s6, CURRENT_DELAY
+
+  # Load medium speed settings  
+    lw $t0, MEDIUM_INITIAL_DELAY
+    sw $t0, CURRENT_DELAY
+    lw $t0, MEDIUM_SPEED_INTERVAL
+    sw $t0, SPEED_INTERVAL
+    lw $t0, MEDIUM_MIN_DELAY
+    sw $t0, MIN_DELAY
 
   # Virus generation 1     
       jal get_random_location_column
@@ -1220,6 +1249,14 @@ check_dup_medium:
   j start_medium
 
 start_hard:
+   # Load hard speed settings
+  lw $t0, HARD_INITIAL_DELAY  
+  sw $t0, CURRENT_DELAY
+  lw $t0, HARD_SPEED_INTERVAL
+  sw $t0, SPEED_INTERVAL
+  lw $t0, HARD_MIN_DELAY
+  sw $t0, MIN_DELAY
+  
   li $s7, 60
   sw $s7, CURRENT_DELAY
  # Virus generation 1  
