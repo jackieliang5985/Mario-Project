@@ -2467,9 +2467,6 @@ falling_capsules_loop:
     add $t8, $t8, $t0         # total offset
     add $t9, $t5, $t8         # final address
     
-    # Verify address is within display memory
-    blt $t9, 0x10008000, next_pixel  # Below display memory
-    bgt $t9, 0x1000BFFC, next_pixel  # Above display memory
     
     # Now safe to check pixel
     lw $v0, 0($t9)            # Get pixel color
