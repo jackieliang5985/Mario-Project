@@ -100,6 +100,8 @@ HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
   SPEED_INTERVAL: .word 30     # Increase speed every 30 calls 
   CURRENT_DELAY: .word 60      # Starts at 60ms (slower)
   MIN_DELAY: .word 20          # Minimum 20ms (fastest)
+
+  ROTATION_STATE: .word 0  # 0=vertical, 1=diagonal, 2=horizontal
   ##############################################################################
   # Mutable Data
   ##############################################################################
@@ -2434,8 +2436,104 @@ flash_play_black_done:
     # Exit the program
       li $v0, 10               # Syscall for exit
       syscall
-      
+
 game_over:
+    # Disable all input
+    li $t0, 1
+    sw $t0, PAUSED            # Set game to paused state
+
+    # Define play area bounds (SAFE)
+    li $t1, 10                # Start row (top of play area)
+    li $t2, 25                # End row (bottom of play area)
+    li $t3, 8                 # Start column (left bound)
+    li $t4, 22                # End column (right bound)
+    lw $t5, ADDR_DSPL         # Display base address
+    li $t6, 0x000000          # Black color
+    li $t7, 128               # Bytes per row
+
+falling_capsules_loop:
+    # Check row bounds
+    blt $t1, 10, next_pixel    # Skip if above play area
+    bgt $t1, 25, next_pixel    # Skip if below play area
+    
+    # Check column bounds
+    blt $t3, 8, next_column    # Skip if left of play area
+    bgt $t3, 22, next_column   # Skip if right of play area
+    
+    # Calculate safe address
+    mul $t8, $t1, $t7         # row * 128
+    li $t9, 4
+    mul $t0, $t3, $t9         # col * 4
+    add $t8, $t8, $t0         # total offset
+    add $t9, $t5, $t8         # final address
+    
+    # Verify address is within display memory
+    blt $t9, 0x10008000, next_pixel  # Below display memory
+    bgt $t9, 0x1000BFFC, next_pixel  # Above display memory
+    
+    # Now safe to check pixel
+    lw $v0, 0($t9)            # Get pixel color
+    beq $v0, $t6, next_pixel  # Skip if black
+    
+    # Found a capsule - make it fall!
+    move $s0, $v0             # Save color
+    move $s1, $t1             # Save starting row
+    move $s2, $t3             # Save column
+    
+fall_single_capsule:
+    # Calculate current address safely
+    mul $t8, $s1, $t7
+    li $t9, 4
+    mul $t0, $s2, $t9
+    add $t8, $t8, $t0
+    add $t9, $t5, $t8
+    
+    # Erase current position
+    sw $t6, 0($t9)            # Draw black
+    
+    # Stop if we've hit bottom
+    li $t8, 25
+    bge $s1, $t8, next_pixel
+    
+    # Calculate new position
+    addi $s1, $s1, 1          # Move down 1 row
+    
+    # Verify new address
+    mul $t8, $s1, $t7
+    li $t9, 4
+    mul $t0, $s2, $t9
+    add $t8, $t8, $t0
+    add $t9, $t5, $t8
+    
+    # Draw at new position
+    sw $s0, 0($t9)
+    
+    # Short delay (30ms)
+    li $a0, 30
+    li $v0, 32
+    syscall
+    
+    j fall_single_capsule
+
+next_column:
+    addi $t3, $t3, 1
+    ble $t3, $t4, falling_capsules_loop
+    li $t3, 8
+    addi $t1, $t1, 1
+    j falling_capsules_loop
+
+next_pixel:
+    addi $t3, $t3, 1
+    ble $t3, $t4, falling_capsules_loop
+    li $t3, 8
+    addi $t1, $t1, 1
+    ble $t1, $t2, falling_capsules_loop
+
+falling_done:
+    # Continue with original game over sequence
+    j original_game_over_sequence
+    
+original_game_over_sequence:
     # If the game is over (row 9 is filled), we allow the player to restart the game
     # Save return address
     addi $sp, $sp, -4
