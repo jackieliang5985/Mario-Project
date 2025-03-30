@@ -771,6 +771,10 @@ before:
       j before
   
   game_loop:
+
+      jal check_viruses_cleared
+      beq $v0, 1, viruses_cleared_sequence  # If all viruses cleared, show ending sequence
+    
       # 1. Read the keyboard status
       lw $t0, ADDR_KBRD
       lw $t1, 0($t0)
@@ -811,6 +815,8 @@ before:
 
     li $t3, 0x67            # 'g' - retrieve
     beq $t2, $t3, retrieve_capsule
+
+    
    
     j game_loop
   
@@ -819,8 +825,8 @@ before:
     lw $t0, PAUSED
     bnez $t0, game_loop     # Don't move if paused
       # 5. Sleep for approximately 16 ms (60 FPS)
-      jal sleep
-      j move_down
+      # jal sleep
+      # j move_down
   
       # 6. Loop back to Step 1
       j game_loop
@@ -1916,16 +1922,178 @@ not_virus:
 viruse:
     li $v0, 1                  # Return 1 (a virus)
     jr $ra                     # Return
-decrease_virus_count:
-    # Decrement virus count and check if game should end
-    lw $t0, VIRUS_COUNT
-    addi $t0, $t0, -1
-    sw $t0, VIRUS_COUNT
 
-        # If count reaches 0, quit game
-    beqz $t0, quit
+check_viruses_cleared:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Check first virus location
+    lw $a0, VIRUS_ROW_FIRST
+    lw $a1, VIRUS_COLUMN_FIRST
+    jal check_pixel
+    beqz $v0, viruses_not_cleared  # If not black, viruses still exist
+    
+    # Check second virus location
+    lw $a0, VIRUS_ROW_SECOND
+    lw $a1, VIRUS_COLUMN_SECOND
+    jal check_pixel
+    beqz $v0, viruses_not_cleared
+    
+    # Check third virus location (if exists)
+    lw $t0, VIRUS_COUNT
+    li $t1, 2
+    ble $t0, $t1, skip_third_check
+    
+    lw $a0, VIRUS_ROW_THIRD
+    lw $a1, VIRUS_COLUMN_THIRD
+    jal check_pixel
+    beqz $v0, viruses_not_cleared
+    
+skip_third_check:
+    # Check fourth virus location (if exists)
+    lw $t0, VIRUS_COUNT
+    li $t1, 3
+    ble $t0, $t1, skip_fourth_check
+    
+    lw $a0, VIRUS_ROW_FOURTH
+    lw $a1, VIRUS_COLUMN_FOURTH
+    jal check_pixel
+    beqz $v0, viruses_not_cleared
+    
+skip_fourth_check:
+    # All virus locations are black
+    li $v0, 1
+    j check_viruses_done
+    
+viruses_not_cleared:
     li $v0, 0
-    jr $ra                     # Return if count > 0
+    
+check_viruses_done:
+    # Restore return address
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+
+    viruses_cleared_sequence:
+    # Flash the play area 3 times (white-black-white-black-white-black)
+    li $t4, 3                  # Number of flashes
+virus_flash_loop:
+    # Flash white
+    jal flash_play_area_white
+    li $a0, 150                # 150ms delay
+    li $v0, 32
+    syscall
+    
+    # Flash black
+    jal flash_play_area_black
+    li $a0, 150                # 150ms delay
+    li $v0, 32
+    syscall
+    
+    addi $t4, $t4, -1          # Decrement flash counter
+    bnez $t4, virus_flash_loop  # Repeat if not done
+
+    # Final clear to black
+    jal flash_play_area_black
+    
+    # Then quit the game
+    j quit
+
+# New function to flash just the play area white
+flash_play_area_white:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables - only cover play area (rows 10-26, columns 8-22)
+    li $t0, 10                 # Start row
+    li $t1, 25                 # End row
+    li $t2, 8                  # Start column
+    li $t3, 22                 # End column
+    lw $t5, ADDR_DSPL          # Base address of display
+    lw $t6, COLOR_WHITE        # White color
+
+flash_play_row_loop:
+    bgt $t0, $t1, flash_play_done  # If row > end row, done
+
+    # Calculate row offset
+    li $t7, 128                # Bytes per row
+    mul $t8, $t0, $t7          # Row offset
+    addu $t9, $t5, $t8         # Start of row
+
+    # Set up column loop
+    move $t7, $t2              # Current column
+
+flash_play_col_loop:
+    bgt $t7, $t3, next_play_row  # If column > end column, next row
+
+    # Calculate pixel address and set to white
+    li $t8, 4                  # Bytes per pixel
+    mul $t8, $t7, $t8          # Column offset
+    addu $t8, $t9, $t8         # Pixel address
+    sw $t6, 0($t8)             # Store white color
+
+    addi $t7, $t7, 1           # Next column
+    j flash_play_col_loop
+
+next_play_row:
+    addi $t0, $t0, 1           # Next row
+    j flash_play_row_loop
+
+flash_play_done:
+    # Restore return address
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+
+# Similar function for flashing play area black
+flash_play_area_black:
+    # Save return address
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+
+    # Initialize variables - only cover play area (rows 10-26, columns 8-22)
+    li $t0, 10                 # Start row
+    li $t1, 25                 # End row
+    li $t2, 8                  # Start column
+    li $t3, 22                 # End column
+    lw $t5, ADDR_DSPL          # Base address of display
+    lw $t6, COLOR_BLACK        # Black color
+
+flash_play_black_row_loop:
+    bgt $t0, $t1, flash_play_black_done  # If row > end row, done
+
+    # Calculate row offset
+    li $t7, 128                # Bytes per row
+    mul $t8, $t0, $t7          # Row offset
+    addu $t9, $t5, $t8         # Start of row
+
+    # Set up column loop
+    move $t7, $t2              # Current column
+
+flash_play_black_col_loop:
+    bgt $t7, $t3, next_play_black_row  # If column > end column, next row
+
+    # Calculate pixel address and set to black
+    li $t8, 4                  # Bytes per pixel
+    mul $t8, $t7, $t8          # Column offset
+    addu $t8, $t9, $t8         # Pixel address
+    sw $t6, 0($t8)             # Store black color
+
+    addi $t7, $t7, 1           # Next column
+    j flash_play_black_col_loop
+
+next_play_black_row:
+    addi $t0, $t0, 1           # Next row
+    j flash_play_black_row_loop
+
+flash_play_black_done:
+    # Restore return address
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
     
     
     # Function to check capsule orientation
@@ -3361,6 +3529,7 @@ check_row_9_done:
     jal draw_pixel
 
     jal check_row_neighbors
+
 
     jal check_row_9_covered
     beq $v0, 1, game_over    # If Row 9 is covered, game over
