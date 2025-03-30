@@ -1985,8 +1985,109 @@ check_viruses_done:
     addi $sp, $sp, 4
     jr $ra
 
+animate_mario:
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
 
+    # --- Blink Eyes ---
+    # Left eye (row 6, col 26)
+    li $a0, 6
+    li $a1, 26
+    lw $a2, COLOR_SKIN  # Close eye
+    jal draw_pixel
+
+    li $a0, 6
+    li $a1, 25
+    lw $a2, COLOR_SKIN  # Close eye
+    jal draw_pixel
+        li $a0, 7
+    li $a1, 25
+    lw $a2, COLOR_SKIN  # Close eye
+    jal draw_pixel
+
+        li $a0, 7
+    li $a1, 26
+    lw $a2, COLOR_SKIN  # Close eye
+    jal draw_pixel
+    
+    # Right eye (row 6, col 28)
+    li $a0, 6
+    li $a1, 28
+    lw $a2, COLOR_SKIN
+    jal draw_pixel
+
+    li $a0, 6
+    li $a1, 29
+    lw $a2, COLOR_SKIN
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 28
+    lw $a2, COLOR_SKIN
+    jal draw_pixel
+
+    
+    li $a0, 7
+    li $a1, 29
+    lw $a2, COLOR_SKIN
+    jal draw_pixel
+    
+    
+    # 50ms delay
+    li $a0, 250
+    li $v0, 32
+    syscall
+    
+    # Left eye (row 6, col 26)
+    li $a0, 6
+    li $a1, 26
+    lw $a2, COLOR_WHITE  # Close eye
+    jal draw_pixel
+
+    li $a0, 6
+    li $a1, 25
+    lw $a2, COLOR_WHITE  # Close eye
+    jal draw_pixel
+    
+        li $a0, 7
+    li $a1, 25
+    lw $a2, COLOR_WHITE  # Close eye
+    jal draw_pixel
+
+        li $a0, 7
+    li $a1, 26
+    lw $a2, COLOR_BLACK  # Close eye
+    jal draw_pixel
+    
+    # Right eye (row 6, col 28)
+    li $a0, 6
+    li $a1, 28
+    lw $a2, COLOR_WHITE
+    jal draw_pixel
+
+    li $a0, 6
+    li $a1, 29
+    lw $a2, COLOR_WHITE
+    jal draw_pixel
+
+    li $a0, 7
+    li $a1, 28
+    lw $a2, COLOR_BLACK
+    jal draw_pixel
+    
+    li $a0, 7
+    li $a1, 29
+    lw $a2, COLOR_WHITE
+    jal draw_pixel
+
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
+    
 viruses_cleared_sequence:
+
+  jal animate_mario
+  
     # row-by-row clearing animation
   li $t0, 25                 # Start from bottom row (25)
   li $t1, 10                  # Stop at top row (9)
@@ -3657,7 +3758,42 @@ check_row_9_done:
       # Draw the capsule at the new position
       jal draw_capsule
       j game_loop
-  
+  # Input: $a0 = row, $a1 = column of pill's bottom half
+animate_pill_squash:
+    addi $sp, $sp, -8
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)          # Save pill color (bottom half)
+
+    # Save bottom pill color
+    move $s0, $a2
+
+    # --- Frame 1: Compress ---
+    # Erase bottom pill pixel
+    lw $a2, COLOR_BLACK
+    jal draw_pixel          # Erase bottom half
+
+    # 30ms delay
+    li $a0, 30
+    li $v0, 32
+    syscall
+
+    # --- Frame 2: Keep compressed ---
+    # 30ms delay
+    li $a0, 30
+    li $v0, 32
+    syscall
+
+    # --- Frame 3: Restore ---
+    # Redraw bottom pill pixel
+    addi $a0, $a0, 1        # Original row+1
+    move $a2, $s0           # Original color
+    jal draw_pixel
+
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)
+    addi $sp, $sp, 8
+    jr $ra
+    
   place_capsule:
     # Color the current position of the capsule
     lw $a0, CAPSULE_ROW_FIRST
@@ -3731,6 +3867,8 @@ check_row_9_done:
     move $a2, $s1
     jal draw_pixel
 
+    jal animate_pill_squash 
+    
     j game_loop
       
 erase_pixel:
