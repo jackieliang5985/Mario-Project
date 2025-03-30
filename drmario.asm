@@ -73,12 +73,20 @@ NEXT_PILL_COL: .word 23       # Column for next pill preview
 NEXT_PILL_COLOR1: .word 0     # Stores color of next pill's first half
 NEXT_PILL_COLOR2: .word 0     # Stores color of next pill's second half
 
+NEXT_PILLS_ROW: .word 1        # Row for next pills preview
+NEXT_PILLS_COL: .word 23       # Starting column for next pills preview (rightmost)
+NEXT_PILLS_COUNT: .word 5      # Number of next pills to show
+NEXT_PILLS_COLORS1: .space 20  # Space for 5 colors (4 bytes each)
+NEXT_PILLS_COLORS2: .space 20  # Space for 5 colors (4 bytes each
+
 
 SAVED_CAPSULE_ROW: .word 7        # Row for saved capsule
 SAVED_CAPSULE_COL: .word 6        # Column for saved capsule
 SAVED_CAPSULE_COLOR1: .word 0     # Color of saved capsule's first half
 SAVED_CAPSULE_COLOR2: .word 0     # Color of saved capsule's second half
 HAS_SAVED_CAPSULE: .word 0        # 0 = no saved capsule, 1 = has saved capsule
+
+
 
 
   PAUSED: .word 0    # 0 = not paused, 1 = paused
@@ -1976,8 +1984,48 @@ check_viruses_done:
     jr $ra
 
 
-    viruses_cleared_sequence:
-    # Flash the play area 3 times (white-black-white-black-white-black)
+viruses_cleared_sequence:
+    # row-by-row clearing animation
+  li $t0, 25                 # Start from bottom row (25)
+  li $t1, 10                  # Stop at top row (9)
+  li $t2, 8                  # Start column
+  li $t3, 22                 # End column
+  lw $t4, ADDR_DSPL          # Base address
+  lw $t5, COLOR_BLACK        # Black color
+  li $t6, 50                 # Delay between rows (ms)
+row_clear_loop:
+    blt $t0, $t1, row_clear_done  # If row < 9, done
+    
+    # Calculate row offset
+    li $t7, 128                # Bytes per row
+    mul $t8, $t0, $t7          # Row offset
+    addu $t9, $t4, $t8         # Start of row
+    
+    # Clear this entire row
+    move $t7, $t2              # Current column
+col_clear_loop:
+    bgt $t7, $t3, next_clear_row # If column > end, next row
+    
+    # Calculate pixel address and set to black
+    li $t8, 4                  # Bytes per pixel
+    mul $t8, $t7, $t8          # Column offset
+    addu $t8, $t9, $t8         # Pixel address
+    sw $t5, 0($t8)             # Store black color
+    
+    addi $t7, $t7, 1           # Next column
+    j col_clear_loop
+    
+next_clear_row:
+    # Delay between rows
+    move $a0, $t6
+    li $v0, 32
+    syscall
+    
+    addi $t0, $t0, -1          # Move up one row
+    j row_clear_loop
+
+row_clear_done:
+    # Now do the flashing effect (3 times white-black)
     li $t4, 3                  # Number of flashes
 virus_flash_loop:
     # Flash white
@@ -2000,7 +2048,6 @@ virus_flash_loop:
     
     # Then quit the game
     j quit
-
 # New function to flash just the play area white
 flash_play_area_white:
     # Save return address
