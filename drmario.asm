@@ -114,6 +114,13 @@
   HARD_MIN_DELAY:        .word 15     # Minimum 15ms
 
   ROTATION_STATE: .word 0  # 0=vertical, 1=diagonal, 2=horizontal
+
+  SOUND_ROTATE:       .word 60, 2000    # Frequency, duration (ms)
+  SOUND_DROP:         .word 80, 300
+  SOUND_ROW_CLEAR:    .word 100, 500
+  SOUND_LEVEL_CLEAR:  .word 1200, 800
+  SOUND_GAME_OVER:    .word 200, 1000
+  SOUND_SYSCALL:      .word 33
   ##############################################################################
   # Mutable Data
   ##############################################################################
@@ -2158,7 +2165,48 @@
       jr $ra
       
   viruses_cleared_sequence:
-  
+    li $a0, 30       # Frequency
+    li $a1, 300       # Duration
+    li $a2, 73       # Trumpet (good for celebration)
+    li $a3, 100        # Tvolume
+    li $v0, 31
+    syscall
+
+    li $v0, 32        # Small delay
+    li $a0, 100
+    syscall
+
+    li $a0, 60       # Frequency
+    li $a1, 300       # Duration
+    li $a2, 73       # Trumpet (good for celebration)
+    li $a3, 100        # Tvolume
+    li $v0, 31
+    syscall
+    
+    li $v0, 32        # Small delay
+    li $a0, 100
+    syscall
+
+    li $a0, 90       # Frequency
+    li $a1, 40       # Duration
+    li $a2, 73       # Trumpet (good for celebration)
+    li $a3, 100        # Tvolume
+    li $v0, 31
+    syscall
+
+    li $v0, 32
+    li $a0, 150
+    syscall
+
+    # Final high note (Victory)
+    li $a0, 100      
+    li $a1, 600    
+    li $a2, 73       # Trumpet (good for celebration)
+    li $a3, 100        # Tvolume
+    li $v0, 33
+    syscall
+
+    
     jal animate_mario
     
       # row-by-row clearing animation
@@ -2348,6 +2396,15 @@
   rotate:
       lw $t0, PAUSED
       bnez $t0, game_loop     # Don't move if paused
+
+      li $a0, 61   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 900
+      li $a2, 8
+      li $a3, 100
+      li $v0, 31
+      syscall
+
+       
       # Check the current position and rotate accordingly
       lw $t0, CAPSULE_ROW_FIRST
       lw $t1, CAPSULE_COL_FIRST
@@ -2612,6 +2669,47 @@
       syscall
 
   game_over:
+      li $a0, 100   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 300
+      li $a2, 81
+      li $a3, 100
+      li $v0, 31
+      syscall
+
+      li $v0, 32       # Sleep syscall (if Saturn supports it)
+      li $a0, 300      # Delay 100ms
+      syscall
+      
+      li $a0, 70   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 400
+      li $a2, 81
+      li $a3, 100
+      li $v0, 31
+      syscall
+      
+      li $v0, 32
+      li $a0, 400
+      syscall
+
+      li $a0, 40   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 500
+      li $a2, 81
+      li $a3, 100
+      li $v0, 31
+      syscall
+
+      li $v0, 32
+      li $a0, 500
+      syscall
+
+      li $a0, 20   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 800
+      li $a2, 81
+      li $a3, 100
+      li $v0, 31
+      syscall
+
+      
       # Disable all input
       li $t0, 1
       sw $t0, PAUSED            # Set game to paused state
@@ -3868,6 +3966,14 @@
       jr $ra
     
   place_capsule:
+
+      li $a0, 61   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 900
+      li $a2, 8
+      li $a3, 100
+      li $v0, 31
+      syscall
+      
     # Color the current position of the capsule
     lw $a0, CAPSULE_ROW_FIRST
     lw $a1, CAPSULE_COL_FIRST
@@ -4362,7 +4468,14 @@
       sw $a2, 12($sp)            # Save end column
       sw $s0, 16($sp)            # Save $s0 (we'll use it)
       sw $s1, 20($sp)            # Save $s1 (we'll use it)
-  
+
+      li $a0, 100   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 400
+      li $a2, 1
+      li $a3, 100
+      li $v0, 31
+      syscall
+      
       # Initialize variables
       lw $t0, ADDR_DSPL          # Base address of display
       li $t1, 128                # Bytes per row
@@ -4504,6 +4617,12 @@
       j shift_columns_loop
   
   shift_columns_done:
+      li $a0, 61   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 900
+      li $a2, 118
+      li $a3, 100
+      li $v0, 31
+      syscall
       # Restore saved registers and return
       lw $s1, 20($sp)
       lw $s0, 16($sp)
@@ -4573,8 +4692,6 @@
       mul $t2, $t7, $t1          # Row offset
       addu $t6, $t0, $t2         # Row address
       addu $t6, $t6, $t4         # Pixel address
-  
-      
       
       
   delete_vertical_segment_loop:
@@ -4593,6 +4710,17 @@
       sw $t0, 12($sp)
       sw $t4, 16($sp)
       
+      li $a0, 100   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 400
+      li $a2, 1
+      li $a3, 100
+      li $v0, 31
+      syscall
+
+      li $v0, 32
+      li $a0, 400
+      syscall
+
       jal animate_mario_happy
       
       # Restore all registers
@@ -4613,6 +4741,12 @@
       j shift_rows_above_loop
       
   shift_rows_above_loop:
+      li $a0, 61   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 900
+      li $a2, 118
+      li $a3, 100
+      li $v0, 31
+      syscall
       bltz $t7, shift_rows_above_done  # If we've reached the top row, exit
       li $t5, 9                  # Row 9 - always stop here
       ble $t7, $t5, shift_rows_above_done  # Stop if we reach row 9 or below
@@ -4678,6 +4812,12 @@
   
   
   shift_rows_above_done:
+      li $a0, 61   #load pitch, duration, instrument and volume when peice is moved
+      li $a1, 900
+      li $a2, 118
+      li $a3, 100
+      li $v0, 31
+      syscall
       # Save $ra since we're calling another function
       addi $sp, $sp, -4
       sw $ra, 0($sp)
@@ -4701,73 +4841,6 @@
   
       # If not gray, continue shifting
       j shift_rows_above_done
-    
-# check_left_and_right_2:
-#     # Initialize variables
-#     li $s2, 1                  # Start with 1 to include the current pixel
-#     move $s3, $a1              # Start column = current column
-#     move $s4, $a1              # End column = current column
-
-#     # Save the original column for left checking
-#     move $t7, $a1
-
-#     # Check to the right
-#     jal check_right_loop_1
-
-#     # Restore the original column for left checking
-#     move $a1, $t7
-
-#     # Check to the left
-#     jal check_left_loop_1
-
-# check_right_loop_1:
-#     # Check the pixel to the right
-#     addi $a1, $a1, 1            # Move to the next column to the right
-#     jal check_pixel       # Check the color of the pixel
-#     beq $v0, 1, check_right_done_1
-#     addi, $a0, $a0, 1
-#     jal check_pixel
-#     beq $v0, 1, find_collision_loop
-
-#     # Continue checking to the right
-#     j check_right_loop_1
-
-# check_right_done_1:
-#     # Restore return address and return
-#     lw $ra, 0($sp)
-#     addi $sp, $sp, 4
-#     jr $ra
-
-# # Function to check left neighbors for a single pixel
-# # Arguments: $a0 = row, $a1 = column, $a2 = color
-# # Modifies: $s2, $s3
-# check_left_for_neigbour:
-#     # Save return address
-#     addi $sp, $sp, -4
-#     sw $ra, 0($sp)
-
-# check_left_loop_1:
-#     # Check the pixel to the left
-#     addi $a1, $a1, -1           # Move to the next column to the left
-#     jal check_pixel_color       # Check the color of the pixel
-
-#     # Compare the color with the capsule color
-#     bne $v0, $a2, check_left_done  # If colors don't match, exit the loop
-
-#     # Increment the counter
-#     addi $s2, $s2, 1
-
-#     # Update the start column
-#     move $s3, $a1
-
-#     # Continue checking to the left
-#     j check_left_loop
-
-# check_left_done_1:
-#     # Restore return address and return
-#     lw $ra, 0($sp)
-#     addi $sp, $sp, 4
-#     jr $ra
 
     
   .data
