@@ -4459,44 +4459,54 @@
   
   # Function to delete a contiguous segment of same-colored pixels in a row and shift pixels above down
   # Arguments: $a0 = row, $a1 = start column, $a2 = end column
-  delete_contiguous_segment:
-      # Save return address and all parameters
-      addi $sp, $sp, -24
-      sw $ra, 0($sp)
-      sw $a0, 4($sp)             # Save row
-      sw $a1, 8($sp)             # Save start column
-      sw $a2, 12($sp)            # Save end column
-      sw $s0, 16($sp)            # Save $s0 (we'll use it)
-      sw $s1, 20($sp)            # Save $s1 (we'll use it)
+ delete_contiguous_segment:
+    # Save return address and all parameters
+    addi $sp, $sp, -24
+    sw $ra, 0($sp)
+    sw $a0, 4($sp)             # Save row
+    sw $a1, 8($sp)             # Save start column
+    sw $a2, 12($sp)            # Save end column
+    sw $s0, 16($sp)            # Save $s0 (we'll use it)
+    sw $s1, 20($sp)            # Save $s1 (we'll use it)
 
-      li $a0, 100   #load pitch, duration, instrument and volume when peice is moved
-      li $a1, 400
-      li $a2, 1
-      li $a3, 100
-      li $v0, 31
-      syscall
-      
-      # Initialize variables
-      lw $t0, ADDR_DSPL          # Base address of display
-      li $t1, 128                # Bytes per row
-      mul $t2, $a0, $t1          # Row offset = row * 128
-      addu $t3, $t0, $t2         # Starting address of the row
-      
-      # Calculate the starting address of the segment
-      li $t4, 4                  # Bytes per pixel
-      mul $t5, $a1, $t4          # Column offset = start column * 4
-      addu $t6, $t3, $t5         # Starting address of the segment
-  
-      # Calculate the ending address of the segment
-      mul $t7, $a2, $t4          # Column offset = end column * 4
-      addu $t8, $t3, $t7         # Ending address of the segment
-  
-      # Save these critical addresses for later
-      move $s0, $t3              # Save row base address
-      move $s1, $t4              # Save bytes per pixel
-  
-      # Fade animation - gradually darken the pixels
-      li $t9, 5                  # Number of fade steps
+    # Initialize variables FIRST (before playing sound)
+    lw $t0, ADDR_DSPL          # Base address of display
+    li $t1, 128                # Bytes per row
+    lw $a0, 4($sp)             # Restore original $a0 (row) from stack
+    mul $t2, $a0, $t1          # Row offset = row * 128
+    addu $t3, $t0, $t2         # Starting address of the row
+    
+    # Calculate the starting address of the segment
+    li $t4, 4                  # Bytes per pixel
+    lw $a1, 8($sp)             # Restore original $a1 (start column) from stack
+    mul $t5, $a1, $t4          # Column offset = start column * 4
+    addu $t6, $t3, $t5         # Starting address of the segment
+
+    # Calculate the ending address of the segment
+    lw $a2, 12($sp)            # Restore original $a2 (end column) from stack
+    mul $t7, $a2, $t4          # Column offset = end column * 4
+    addu $t8, $t3, $t7         # Ending address of the segment
+
+    # Save these critical addresses for later
+    move $s0, $t3              # Save row base address
+    move $s1, $t4              # Save bytes per pixel
+
+    # play the sound (after we've used $a0-$a2)
+    li $a0, 100   # pitch
+    li $a1, 400   # duration
+    li $a2, 1     # instrument
+    li $a3, 100   # volume
+    li $v0, 31    # syscall for sound
+    syscall
+
+    # Restore $a0-$a2 again after sound
+    lw $a0, 4($sp)
+    lw $a1, 8($sp)
+    lw $a2, 12($sp)
+
+    # Fade animation - gradually darken the pixels
+    li $t9, 5                  # Number of fade steps
+    
       
   fade_animation_loop:
       # Process each pixel in the segment
